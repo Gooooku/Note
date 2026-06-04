@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Notes">
+<meta name="theme-color" content="#2D6A4F">
+<title>Notes Élèves</title>
+<style>
+:root {
+  --bg: #F4F2EE;
+  --surface: #FFFFFF;
+  --surface2: #F9F8F5;
+  --border: rgba(0,0,0,0.09);
+  --border2: rgba(0,0,0,0.15);
+  --text: #1A1A18;
+  --text2: #6B6860;
+  --text3: #9E9C96;
+  --accent: #2D6A4F;
+  --accent-light: #E8F5EE;
+  --accent-text: #1B4332;
+  --red: #C1121F;
+  --red-light: #FEE8EA;
+  --amber: #B45309;
+  --amber-light: #FEF3C7;
+  --blue: #1E5FA8;
+  --blue-light: #EBF2FC;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --sidebar-w: 230px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: none;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 10;
+}
+.sidebar-header {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-header-icon {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.sidebar-header-icon svg { width: 20px; height: 20px; }
+.sidebar-header-text { min-width: 0; }
+.sidebar-header-text h1 { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.sidebar-header-text p { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.sidebar-label {
+  padding: 16px 18px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.sidebar-list {
+  padding: 0 10px;
+  flex: 1;
+  overflow-y: auto;
+}
+.sidebar-list-empty {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text3);
+  font-style: italic;
+}
+.sidebar-item {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  margin-bottom: 2px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.sidebar-item.active { background: var(--accent-light); }
+.sidebar-item-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  text-align: left;
+  font-weight: 500;
+  min-width: 0;
+}
+.sidebar-item-btn:hover { background: var(--bg); }
+.sidebar-item.active .sidebar-item-btn { color: var(--accent-text); font-weight: 600; background: transparent; }
+.sidebar-item.active .sidebar-item-btn:hover { background: rgba(0,0,0,0.03); }
+.sidebar-item-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text3);
+  flex-shrink: 0;
+}
+.sidebar-item.active .sidebar-item-dot { background: var(--accent); }
+.sidebar-item-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-item-menu {
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.sidebar-item-menu:hover { background: var(--bg); color: var(--text); }
+.sidebar-item.active .sidebar-item-menu:hover { background: rgba(0,0,0,0.05); }
+.sidebar-item-menu svg { width: 16px; height: 16px; }
+.sidebar-footer {
+  padding: 14px 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* APP LAYOUT */
+.app-layout { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* TOPBAR */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  gap: 10px;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.topbar h2 { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.topbar-mobile-logo { display: flex; align-items: center; gap: 8px; }
+
+/* CLASS BAR (mobile only) */
+.class-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  align-items: center;
+}
+.class-bar::-webkit-scrollbar { display: none; }
+.class-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text2);
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.class-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.class-chip-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 1px dashed var(--border2);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.class-chip-add svg { width: 13px; height: 13px; }
+.class-edit-btn-mobile {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text2);
+}
+.class-edit-btn-mobile svg { width: 16px; height: 16px; }
+
+/* SEMESTRE TABS */
+.semestre-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.semestre-tabs::-webkit-scrollbar { display: none; }
+.semestre-tab {
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text3);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.semestre-tab:hover { color: var(--text); }
+.semestre-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; }
+.content { padding: 16px; padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.15s;
+  min-height: 40px;
+}
+.btn:hover { background: var(--bg); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: #235A42; border-color: #235A42; }
+.btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-danger:hover { background: #9B0E18; }
+.btn-sm { padding: 6px 12px; font-size: 13px; min-height: 34px; }
+.btn-icon {
+  width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text2);
+  transition: all 0.15s;
+}
+.btn-icon:hover { background: var(--bg); }
+.btn-icon svg { width: 16px; height: 16px; }
+.btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+/* SECTION HEADER */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.section-title { font-size: 16px; font-weight: 600; }
+.section-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* CARD */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+/* STATS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.stat-val {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+.stat-card.green .stat-val { color: var(--accent); }
+.stat-card.amber .stat-val { color: var(--amber); }
+.stat-card.red .stat-val { color: var(--red); }
+.stat-card.blue .stat-val { color: var(--blue); }
+
+/* NOTE BADGE */
+.note-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: monospace;
+}
+.note-badge.excellent { background: #DCFCE7; color: #166534; }
+.note-badge.bien { background: var(--accent-light); color: var(--accent-text); }
+.note-badge.moyen { background: var(--amber-light); color: #78350F; }
+.note-badge.insuffisant { background: var(--red-light); color: #7B0D14; }
+.note-badge.vide { background: var(--bg); color: var(--text3); border: 1px dashed var(--border2); }
+
+/* MOY BADGE */
+.moy-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: monospace;
+}
+.moy-badge.excellent { background: #DCFCE7; color: #166534; }
+.moy-badge.bien { background: var(--accent-light); color: var(--accent-text); }
+.moy-badge.moyen { background: var(--amber-light); color: #78350F; }
+.moy-badge.insuffisant { background: var(--red-light); color: #7B0D14; }
+.moy-badge.vide { background: var(--bg); color: var(--text3); }
+
+/* TABLE NOTES */
+.notes-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.notes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.notes-table th {
+  background: var(--bg);
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.notes-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.notes-table tr:last-child td { border-bottom: none; }
+.notes-table tr:hover td { background: var(--surface2); }
+.notes-table .nom-cell { font-weight: 600; min-width: 130px; }
+.notes-table .test-cell { min-width: 170px; }
+.notes-table .moy-cell { text-align: center; min-width: 80px; }
+.notes-table .action-cell { white-space: nowrap; min-width: 80px; }
+
+/* Avatar pour le nom */
+.eleve-row { display: flex; align-items: center; gap: 10px; }
+.eleve-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.eleve-name-block { display: flex; flex-direction: column; min-width: 0; }
+.eleve-fullname {
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.eleve-classname { font-size: 11px; color: var(--text3); }
+
+.pts-inputs { display: flex; align-items: center; gap: 6px; }
+.pts-input {
+  width: 64px;
+  padding: 7px 8px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: monospace;
+  text-align: center;
+  background: var(--surface);
+  color: var(--text);
+  -moz-appearance: textfield;
+}
+.pts-input::-webkit-outer-spin-button,
+.pts-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pts-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,106,79,0.12); }
+.pts-sep { color: var(--text3); font-weight: 600; font-size: 13px; }
+.pts-total {
+  font-size: 12px;
+  color: var(--text3);
+  margin-right: 4px;
+  background: none;
+  border: 1px solid transparent;
+  padding: 3px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.pts-total:hover { background: var(--bg); border-color: var(--border); color: var(--text2); }
+.pts-total.is-custom {
+  color: var(--blue);
+  font-weight: 700;
+  background: var(--blue-light);
+  border-color: var(--blue);
+}
+.close-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--amber-light);
+  color: var(--amber);
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+.close-indicator svg { width: 11px; height: 11px; stroke-width: 2.5; }
+
+/* TEST COL HEADER */
+.test-col-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.test-col-header .test-name { font-weight: 600; font-size: 12px; color: var(--text); }
+.test-col-header .test-total { font-weight: 400; font-size: 11px; color: var(--text3); }
+.test-coef-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+.test-col-actions { display: flex; gap: 3px; margin-top: 3px; }
+.test-mini-btn {
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text2);
+  padding: 0;
+}
+.test-mini-btn:hover { background: var(--bg); }
+.test-mini-btn.danger { color: var(--red); }
+.test-mini-btn svg { width: 11px; height: 11px; }
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+}
+.empty-state svg { width: 44px; height: 44px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { font-size: 15px; margin-bottom: 6px; color: var(--text2); }
+.empty-state small { font-size: 13px; }
+
+/* WELCOME */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  min-height: 60vh;
+}
+.welcome-icon {
+  width: 80px; height: 80px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.welcome-icon svg { width: 40px; height: 40px; }
+.welcome h2 { font-size: 22px; margin-bottom: 8px; }
+.welcome p { color: var(--text2); margin-bottom: 24px; max-width: 320px; }
+
+/* MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  animation: modal-in 0.15s ease;
+}
+@keyframes modal-in { from { opacity:0; transform: scale(0.96) translateY(8px); } to { opacity:1; transform: none; } }
+.modal-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+.modal-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.modal-footer {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 13px; font-weight: 500; color: var(--text2); }
+.form-input {
+  padding: 10px 12px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+}
+.form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,106,79,0.12); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.form-check input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1A1A18;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 100;
+  opacity: 0;
+  transition: all 0.25s;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ACTION SHEET */
+.action-list { display: flex; flex-direction: column; gap: 4px; }
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+.action-item:hover { background: var(--bg); }
+.action-item svg { width: 18px; height: 18px; color: var(--text2); }
+.action-item.danger { color: var(--red); }
+.action-item.danger svg { color: var(--red); }
+
+/* DESKTOP */
+@media (min-width: 1024px) {
+  .sidebar { display: flex; }
+  .app-layout { margin-left: var(--sidebar-w); }
+  .class-bar { display: none; }
+  .topbar-mobile-logo { display: none; }
+  .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .content { padding: 24px; }
+  .topbar { padding: 14px 24px; }
+  .semestre-tabs { padding: 12px 24px 0; }
+}
+@media (max-width: 1023px) {
+  .sidebar { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR (desktop only) -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    </div>
+    <div class="sidebar-header-text">
+      <h1>Notes Élèves</h1>
+      <p>Gestion des notes</p>
+    </div>
+  </div>
+  <div class="sidebar-label">Classes</div>
+  <div class="sidebar-list" id="sidebar-list"></div>
+  <div class="sidebar-footer">
+    <button class="btn btn-primary" onclick="openAddClasse()" style="width:100%">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Ajouter une classe
+    </button>
+  </div>
+</aside>
+
+<div class="app-layout">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-mobile-logo">
+        <span style="font-size:22px">📊</span>
+      </span>
+      <h2 id="topbar-title">Notes Élèves</h2>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" onclick="saveData(true)" title="Sauvegarder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      </button>
+      <button class="btn-icon" onclick="openMenuModal()" title="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- CLASS BAR (mobile only) -->
+  <div class="class-bar" id="class-bar"></div>
+
+  <!-- SEMESTRE TABS -->
+  <div class="semestre-tabs" id="semestre-tabs"></div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- MODAL CLASSE -->
+<div class="modal-overlay" id="modal-classe">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-classe-title">Nouvelle classe</h3>
+      <button class="btn-icon" onclick="closeModal('modal-classe')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nom de la classe</label>
+        <input class="form-input" id="classe-nom" placeholder="ex: 3ème A" autocomplete="off">
+      </div>
+      <label class="form-check">
+        <input type="checkbox" id="classe-examen">
+        <span>Cette classe a un examen séparé</span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-classe')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveClasse()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLASS ACTIONS -->
+<div class="modal-overlay" id="modal-classe-actions">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-classe-actions-title">Options</h3>
+      <button class="btn-icon" onclick="closeModal('modal-classe-actions')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="action-list">
+        <button class="action-item" onclick="editCurrentClasse()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Renommer / modifier
+        </button>
+        <button class="action-item danger" onclick="deleteCurrentClasse()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Supprimer la classe
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÉLÈVE -->
+<div class="modal-overlay" id="modal-eleve">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-eleve-title">Ajouter un élève</h3>
+      <button class="btn-icon" onclick="closeModal('modal-eleve')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input class="form-input" id="eleve-prenom" placeholder="ex: Marie" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom</label>
+          <input class="form-input" id="eleve-nom" placeholder="ex: Dupont" autocomplete="off">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);font-style:italic">L'élève sera ajouté à tous les semestres et à l'examen.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-eleve')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEleve()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TEST -->
+<div class="modal-overlay" id="modal-test">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-test-title">Ajouter un test</h3>
+      <button class="btn-icon" onclick="closeModal('modal-test')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nom du test</label>
+        <input class="form-input" id="test-nom" placeholder="ex: Contrôle ch.3" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Points au total</label>
+          <input class="form-input" id="test-total" type="number" inputmode="decimal" min="0.5" step="0.5" placeholder="ex: 20">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Coefficient</label>
+          <input class="form-input" id="test-coef" type="number" inputmode="decimal" min="0.1" step="0.5" placeholder="1" value="1">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);font-style:italic">
+        Coefficient 1 = poids normal. 2 = compte double dans la moyenne.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-test')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveTest()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MENU -->
+<div class="modal-overlay" id="modal-menu">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Menu</h3>
+      <button class="btn-icon" onclick="closeModal('modal-menu')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="action-list">
+        <button class="action-item" onclick="exportJSON()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exporter une sauvegarde
+        </button>
+        <button class="action-item" onclick="document.getElementById('import-file').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importer une sauvegarde
+        </button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+      </div>
+      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">
+        Formule : pts ÷ total × 5 + 1, arrondi à la demi
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORT CSV -->
+<div class="modal-overlay" id="modal-import-csv">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3>Importer des élèves (CSV)</h3>
+      <button class="btn-icon" onclick="closeModal('modal-import-csv')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="csv-preview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-import-csv')">Annuler</button>
+      <button class="btn btn-primary" id="csv-import-confirm" onclick="confirmImportCSV()">Importer</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="csv-import-file" accept=".csv,text/csv,text/plain" style="display:none" onchange="handleCSVFile(event)">
+
+<!-- MODAL CUSTOM TOTAL -->
+<div class="modal-overlay" id="modal-custom-total">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Total personnalisé pour cet élève</h3>
+      <button class="btn-icon" onclick="closeModal('modal-custom-total')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="custom-total-context" style="font-size:13px;color:var(--text2);line-height:1.5"></div>
+      <div class="form-group">
+        <label class="form-label">Total de points pour cet élève</label>
+        <input class="form-input" id="custom-total-input" type="number" inputmode="decimal" min="0.5" step="0.5">
+      </div>
+      <div style="font-size:12px;color:var(--text3);font-style:italic">
+        Utile si l'élève a passé un test différent (rattrapage, version adaptée…).
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn" id="custom-total-reset" onclick="resetCustomTotal()" style="display:none">Rétablir défaut</button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn" onclick="closeModal('modal-custom-total')">Annuler</button>
+        <button class="btn btn-primary" onclick="saveCustomTotal()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// =========================================================
+// DATA MODEL
+// =========================================================
+const STORAGE_KEY = 'notes-eleves-v2';
+
+let state = {
+  classes: [],
+  currentClassId: null,
+  currentSemestre: 'semestre1'
+};
+
+let editingClasseId = null;
+let editingEleveId = null;
+let editingTestId = null;
+let modalSemestreContext = null;
+let customTotalContext = null;
+
+// =========================================================
+// PERSISTENCE
+// =========================================================
+function saveData(showToast = false) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (showToast) toast('✓ Sauvegardé');
+  } catch(e) {
+    toast('⚠ Erreur de sauvegarde');
+  }
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.classes) state.classes = parsed.classes;
+      if (parsed.currentClassId) state.currentClassId = parsed.currentClassId;
+      if (parsed.currentSemestre) state.currentSemestre = parsed.currentSemestre;
+    }
+  } catch(e) {}
+  if (state.currentClassId && !state.classes.find(c => c.id === state.currentClassId)) {
+    state.currentClassId = state.classes[0]?.id || null;
+  } else if (!state.currentClassId && state.classes.length) {
+    state.currentClassId = state.classes[0].id;
+  }
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `notes-eleves-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  closeModal('modal-menu');
+  toast('📥 Fichier exporté');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!confirm('Importer ce fichier remplacera toutes les données actuelles. Continuer ?')) {
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed.classes || !Array.isArray(parsed.classes)) throw new Error('Format invalide');
+      state.classes = parsed.classes;
+      state.currentClassId = parsed.currentClassId || parsed.classes[0]?.id || null;
+      state.currentSemestre = parsed.currentSemestre || 'semestre1';
+      saveData();
+      closeModal('modal-menu');
+      renderAll();
+      toast('✓ Données importées');
+    } catch(err) {
+      toast('⚠ Fichier invalide');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// =========================================================
+// HELPERS
+// =========================================================
+function getCurrentClasse() {
+  return state.classes.find(c => c.id === state.currentClassId) || null;
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Arrondi à la demi (0.5) — règle "moitié vers le haut"
+// 3.75 → 4.0 ; 3.74 → 3.5 ; 3.25 → 3.5 ; 3.24 → 3.0
+function roundHalf(n) {
+  return Math.round(n * 2) / 2;
+}
+
+// Total effectif pour un élève sur un test (custom si défini, sinon défaut)
+function getEffectiveTotal(section, eleveId, testId) {
+  const key = eleveId + '_' + testId;
+  const custom = section.customTotals && section.customTotals[key];
+  if (custom !== undefined && custom !== null && custom > 0) return custom;
+  const test = section.tests.find(t => t.id === testId);
+  return test ? test.total : 0;
+}
+
+function hasCustomTotal(section, eleveId, testId) {
+  const key = eleveId + '_' + testId;
+  return section.customTotals && section.customTotals[key] !== undefined && section.customTotals[key] !== null;
+}
+
+// Coefficient d'un test (1 par défaut, rétro-compat avec anciens tests sans coef)
+function getCoef(test) {
+  const c = test && test.coef;
+  if (c === undefined || c === null || isNaN(Number(c)) || Number(c) <= 0) return 1;
+  return Number(c);
+}
+
+// Note d'un test — arrondie à la demi
+function calcNote(pts, total) {
+  if (!total || total <= 0) return null;
+  const raw = (pts / total) * 5 + 1;
+  return roundHalf(raw);
+}
+
+// Vrai si l'élève est à 0.5 pt du test près d'obtenir la note arrondie supérieure
+function isCloseToNextGrade(pts, total) {
+  if (pts === undefined || pts === null || pts === '') return false;
+  const p = Number(pts);
+  if (isNaN(p)) return false;
+  if (p >= total) return false;
+  const current = calcNote(p, total);
+  if (current === null || current >= 6.0) return false;
+  const withHalfMore = calcNote(Math.min(p + 0.5, total), total);
+  return withHalfMore > current;
+}
+
+// Moyenne pondérée par coefficient — sur notes déjà arrondies, puis arrondie à la demi
+function calcMoyenne(section, eleveId) {
+  let weightedSum = 0;
+  let totalCoef = 0;
+  section.tests.forEach(t => {
+    const key = eleveId + '_' + t.id;
+    const v = section.notes[key];
+    if (v !== undefined && v !== '' && v !== null) {
+      const effectiveTotal = getEffectiveTotal(section, eleveId, t.id);
+      const note = calcNote(Number(v), effectiveTotal);
+      const coef = getCoef(t);
+      weightedSum += note * coef;
+      totalCoef += coef;
+    }
+  });
+  if (totalCoef === 0) return null;
+  return roundHalf(weightedSum / totalCoef);
+}
+
+function noteClass(n) {
+  if (n >= 5.5) return 'excellent';
+  if (n >= 4.5) return 'bien';
+  if (n >= 4) return 'moyen';
+  return 'insuffisant';
+}
+function moyColor(n) {
+  if (n >= 4.5) return 'green';
+  if (n >= 4) return 'amber';
+  return 'red';
+}
+
+function initials(prenom, nom) {
+  const p = (prenom || '').trim();
+  const n = (nom || '').trim();
+  return ((p[0] || '') + (n[0] || '')).toUpperCase();
+}
+
+function syncEleves(classe) {
+  ['semestre1', 'semestre2', 'examen'].forEach(s => {
+    if (!classe[s]) classe[s] = { tests: [], notes: {}, customTotals: {} };
+    if (!classe[s].customTotals) classe[s].customTotals = {};
+  });
+}
+
+// =========================================================
+// RENDER : SIDEBAR
+// =========================================================
+function renderSidebar() {
+  const list = document.getElementById('sidebar-list');
+  if (state.classes.length === 0) {
+    list.innerHTML = `<div class="sidebar-list-empty">Aucune classe.<br>Cliquez sur "Ajouter une classe" ci-dessous.</div>`;
+    return;
+  }
+  let html = '';
+  state.classes.forEach(c => {
+    const active = c.id === state.currentClassId;
+    html += `<div class="sidebar-item ${active ? 'active' : ''}">
+      <button class="sidebar-item-btn" onclick="selectClasse('${c.id}')">
+        <span class="sidebar-item-dot"></span>
+        <span class="sidebar-item-name">${esc(c.nom)}</span>
+      </button>
+      ${active ? `<button class="sidebar-item-menu" onclick="openClasseActions()" title="Options">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </button>` : ''}
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+// =========================================================
+// RENDER : CLASS BAR (mobile)
+// =========================================================
+function renderClassBar() {
+  const bar = document.getElementById('class-bar');
+  if (state.classes.length === 0) {
+    bar.innerHTML = `<button class="class-chip-add" onclick="openAddClasse()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Créer une classe
+    </button>`;
+    return;
+  }
+  let html = '';
+  state.classes.forEach(c => {
+    const active = c.id === state.currentClassId;
+    html += `<button class="class-chip ${active ? 'active' : ''}" onclick="selectClasse('${c.id}')">${esc(c.nom)}</button>`;
+  });
+  html += `<button class="class-chip-add" onclick="openAddClasse()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Nouvelle
+  </button>`;
+  if (state.currentClassId) {
+    html += `<button class="class-edit-btn-mobile" onclick="openClasseActions()" title="Options">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    </button>`;
+  }
+  bar.innerHTML = html;
+}
+
+// =========================================================
+// RENDER : SEMESTRE TABS
+// =========================================================
+function renderSemestreTabs() {
+  const tabs = document.getElementById('semestre-tabs');
+  const classe = getCurrentClasse();
+  if (!classe) { tabs.innerHTML = ''; tabs.style.display = 'none'; return; }
+  tabs.style.display = 'flex';
+
+  if (state.currentSemestre === 'examen' && !classe.hasExamen) {
+    state.currentSemestre = 'semestre1';
+  }
+
+  let html = `
+    <button class="semestre-tab ${state.currentSemestre === 'semestre1' ? 'active' : ''}" onclick="selectSemestre('semestre1')">Semestre 1</button>
+    <button class="semestre-tab ${state.currentSemestre === 'semestre2' ? 'active' : ''}" onclick="selectSemestre('semestre2')">Semestre 2</button>
+  `;
+  if (classe.hasExamen) {
+    html += `<button class="semestre-tab ${state.currentSemestre === 'examen' ? 'active' : ''}" onclick="selectSemestre('examen')">Examen</button>`;
+  }
+  tabs.innerHTML = html;
+}
+
+// =========================================================
+// RENDER : MAIN CONTENT
+// =========================================================
+function renderContent() {
+  const content = document.getElementById('content');
+  const classe = getCurrentClasse();
+
+  // Update topbar title
+  const topbarTitle = document.getElementById('topbar-title');
+  if (classe) {
+    const semestreLabel = state.currentSemestre === 'examen' ? 'Examen' : state.currentSemestre === 'semestre1' ? 'Semestre 1' : 'Semestre 2';
+    topbarTitle.textContent = `${classe.nom} — ${semestreLabel}`;
+  } else {
+    topbarTitle.textContent = 'Notes Élèves';
+  }
+
+  if (state.classes.length === 0) {
+    content.innerHTML = `
+      <div class="welcome">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        </div>
+        <h2>Bienvenue !</h2>
+        <p>Commencez par créer votre première classe pour saisir les notes de vos élèves.</p>
+        <button class="btn btn-primary" onclick="openAddClasse()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Créer une classe
+        </button>
+      </div>`;
+    return;
+  }
+
+  if (!classe) { content.innerHTML = ''; return; }
+  syncEleves(classe);
+
+  const section = classe[state.currentSemestre];
+  const isExamen = state.currentSemestre === 'examen';
+  const testLabel = isExamen ? 'examen' : 'test';
+
+  // STATS
+  const nbEleves = classe.eleves.length;
+  const nbTests = section.tests.length;
+  const allMoys = classe.eleves.map(e => calcMoyenne(section, e.id)).filter(m => m !== null);
+  // Moyenne de classe : arrondie au dixième (1 décimale)
+  const moyClasse = allMoys.length ? Math.round((allMoys.reduce((a,b) => a+b, 0) / allMoys.length) * 10) / 10 : null;
+  const nbInsuffisant = allMoys.filter(m => m < 4).length;
+
+  const statsHtml = `
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-label">Élèves</div>
+        <div class="stat-val">${nbEleves}</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">${isExamen ? 'Examens' : 'Tests'}</div>
+        <div class="stat-val">${nbTests}</div>
+      </div>
+      <div class="stat-card ${moyClasse !== null ? moyColor(moyClasse) : ''}">
+        <div class="stat-label">Moy. classe</div>
+        <div class="stat-val">${moyClasse !== null ? moyClasse.toFixed(1) : '—'}</div>
+      </div>
+      <div class="stat-card ${nbInsuffisant > 0 ? 'red' : 'green'}">
+        <div class="stat-label">Insuff. &lt;4</div>
+        <div class="stat-val">${nbInsuffisant}</div>
+      </div>
+    </div>`;
+
+  let mainHtml;
+  if (nbEleves === 0) {
+    mainHtml = `<div class="card"><div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <p>Aucun élève dans <strong>${esc(classe.nom)}</strong></p>
+      <small>Ajoutez votre premier élève pour commencer</small>
+    </div></div>`;
+  } else {
+    mainHtml = buildTable(classe, section);
+  }
+
+  content.innerHTML = `
+    ${statsHtml}
+    <div class="section-header">
+      <div class="section-title">${esc(classe.nom)}</div>
+      <div class="section-actions">
+        <button class="btn btn-sm" onclick="openCSVImport()" title="Importer une liste d'élèves depuis un fichier CSV">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importer CSV
+        </button>
+        <button class="btn btn-sm" onclick="openAddTest()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter ${testLabel}
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="openAddEleve()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter élève
+        </button>
+      </div>
+    </div>
+    ${mainHtml}
+  `;
+
+  content.querySelectorAll('.pts-input').forEach(input => {
+    input.addEventListener('change', onPtsChange);
+    input.addEventListener('blur', onPtsChange);
+  });
+}
+
+function buildTable(classe, section) {
+  if (section.tests.length === 0) {
+    let rows = classe.eleves.map(e => `
+      <tr>
+        <td class="nom-cell">${eleveCellHtml(e, classe)}</td>
+        <td style="color:var(--text3);font-style:italic;font-size:12px">Aucun ${state.currentSemestre === 'examen' ? 'examen' : 'test'} — cliquez sur "Ajouter ${state.currentSemestre === 'examen' ? 'examen' : 'test'}"</td>
+        <td class="moy-cell"><span class="moy-badge vide">—</span></td>
+        <td class="action-cell">${eleveActionsHtml(e.id)}</td>
+      </tr>`).join('');
+    return `<div class="card"><div class="notes-table-wrap">
+      <table class="notes-table">
+        <thead><tr><th>Élève</th><th></th><th style="text-align:center">Moy.</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div></div>`;
+  }
+
+  let headCols = `<th>Élève</th>`;
+  section.tests.forEach(t => {
+    const coef = getCoef(t);
+    const coefBadge = coef !== 1 ? `<span class="test-coef-badge">Coef. ${coef}</span>` : '';
+    headCols += `<th>
+      <div class="test-col-header">
+        <span class="test-name">${esc(t.nom)}</span>
+        <span class="test-total">/ ${t.total} pts</span>
+        ${coefBadge}
+        <div class="test-col-actions">
+          <button class="test-mini-btn" onclick="editTest('${t.id}')" title="Modifier">
+            <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7'/><path d='M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z'/></svg>
+          </button>
+          <button class="test-mini-btn danger" onclick="deleteTest('${t.id}')" title="Supprimer">
+            <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14H6L5 6'/><path d='M9 6V4h6v2'/></svg>
+          </button>
+        </div>
+      </div>
+    </th>`;
+  });
+  headCols += `<th style="text-align:center">Moy.</th><th></th>`;
+
+  let rows = '';
+  classe.eleves.forEach(e => {
+    let testCols = '';
+    section.tests.forEach(t => {
+      const key = e.id + '_' + t.id;
+      const pts = section.notes[key] !== undefined ? section.notes[key] : '';
+      const effectiveTotal = getEffectiveTotal(section, e.id, t.id);
+      const isCustom = hasCustomTotal(section, e.id, t.id);
+      const note = pts !== '' && pts !== null ? calcNote(Number(pts), effectiveTotal) : null;
+      const noteBadge = note !== null
+        ? `<span class="note-badge ${noteClass(note)}">${note.toFixed(1)}</span>`
+        : `<span class="note-badge vide">—</span>`;
+      const closeBadge = (note !== null && isCloseToNextGrade(Number(pts), effectiveTotal))
+        ? `<span class="close-indicator" title="À 0.5 point de la note supérieure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 14 12 8 18 14"/></svg>
+          </span>`
+        : '';
+      const customTitle = isCustom
+        ? `Total personnalisé (par défaut : ${t.total})`
+        : 'Cliquez pour définir un total personnalisé';
+      testCols += `<td class="test-cell">
+        <div class="pts-inputs">
+          <input class="pts-input" type="number" inputmode="decimal" min="0" max="${effectiveTotal}" step="0.5"
+            data-eleve="${e.id}" data-test="${t.id}"
+            value="${pts}" placeholder="—">
+          <span class="pts-sep">/</span>
+          <button class="pts-total ${isCustom ? 'is-custom' : ''}" onclick="openCustomTotal('${e.id}','${t.id}')" title="${customTitle}">${effectiveTotal}${isCustom ? '*' : ''}</button>
+          ${noteBadge}
+          ${closeBadge}
+        </div>
+      </td>`;
+    });
+
+    const moy = calcMoyenne(section, e.id);
+    const moyHtml = moy !== null
+      ? `<span class="moy-badge ${noteClass(moy)}">${moy.toFixed(1)}</span>`
+      : `<span class="moy-badge vide">—</span>`;
+
+    rows += `<tr>
+      <td class="nom-cell">${eleveCellHtml(e, classe)}</td>
+      ${testCols}
+      <td class="moy-cell">${moyHtml}</td>
+      <td class="action-cell">${eleveActionsHtml(e.id)}</td>
+    </tr>`;
+  });
+
+  return `<div class="card"><div class="notes-table-wrap">
+    <table class="notes-table">
+      <thead><tr>${headCols}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div></div>`;
+}
+
+function eleveCellHtml(e, classe) {
+  return `<div class="eleve-row">
+    <div class="eleve-avatar">${esc(initials(e.prenom, e.nom))}</div>
+    <div class="eleve-name-block">
+      <span class="eleve-fullname">${esc(e.prenom)} ${esc(e.nom)}</span>
+      <span class="eleve-classname">${esc(classe.nom)}</span>
+    </div>
+  </div>`;
+}
+
+function eleveActionsHtml(id) {
+  return `<div style="display:flex;gap:4px">
+    <button class="btn-icon" style="width:30px;height:30px" onclick="editEleve('${id}')" title="Modifier">
+      <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' style='width:13px;height:13px'><path d='M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7'/><path d='M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z'/></svg>
+    </button>
+    <button class="btn-icon" style="width:30px;height:30px;color:var(--red)" onclick="deleteEleve('${id}')" title="Supprimer">
+      <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' style='width:13px;height:13px'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14H6L5 6'/><path d='M10 11v6'/><path d='M14 11v6'/><path d='M9 6V4h6v2'/></svg>
+    </button>
+  </div>`;
+}
+
+function renderAll() {
+  renderSidebar();
+  renderClassBar();
+  renderSemestreTabs();
+  renderContent();
+}
+
+// =========================================================
+// CLASS ACTIONS
+// =========================================================
+function selectClasse(id) {
+  state.currentClassId = id;
+  saveData();
+  renderAll();
+}
+
+function selectSemestre(s) {
+  state.currentSemestre = s;
+  saveData();
+  renderSemestreTabs();
+  renderContent();
+}
+
+function openAddClasse() {
+  editingClasseId = null;
+  document.getElementById('modal-classe-title').textContent = 'Nouvelle classe';
+  document.getElementById('classe-nom').value = '';
+  document.getElementById('classe-examen').checked = false;
+  openModal('modal-classe');
+  setTimeout(() => document.getElementById('classe-nom').focus(), 100);
+}
+
+function openClasseActions() {
+  const c = getCurrentClasse();
+  if (!c) return;
+  document.getElementById('modal-classe-actions-title').textContent = `Options : ${c.nom}`;
+  openModal('modal-classe-actions');
+}
+
+function editCurrentClasse() {
+  closeModal('modal-classe-actions');
+  const c = getCurrentClasse();
+  if (!c) return;
+  editingClasseId = c.id;
+  document.getElementById('modal-classe-title').textContent = 'Modifier la classe';
+  document.getElementById('classe-nom').value = c.nom;
+  document.getElementById('classe-examen').checked = !!c.hasExamen;
+  openModal('modal-classe');
+  setTimeout(() => document.getElementById('classe-nom').focus(), 100);
+}
+
+function saveClasse() {
+  const nom = document.getElementById('classe-nom').value.trim();
+  const hasExamen = document.getElementById('classe-examen').checked;
+  if (!nom) { toast('Nom requis'); return; }
+  if (editingClasseId) {
+    const c = state.classes.find(x => x.id === editingClasseId);
+    if (c) { c.nom = nom; c.hasExamen = hasExamen; }
+    toast('Classe modifiée');
+  } else {
+    const newClasse = {
+      id: uid(),
+      nom,
+      hasExamen,
+      eleves: [],
+      semestre1: { tests: [], notes: {} },
+      semestre2: { tests: [], notes: {} },
+      examen: { tests: [], notes: {} }
+    };
+    state.classes.push(newClasse);
+    state.currentClassId = newClasse.id;
+    state.currentSemestre = 'semestre1';
+    toast('Classe créée');
+  }
+  saveData();
+  closeModal('modal-classe');
+  renderAll();
+}
+
+function deleteCurrentClasse() {
+  closeModal('modal-classe-actions');
+  const c = getCurrentClasse();
+  if (!c) return;
+  if (!confirm(`Supprimer la classe "${c.nom}" et toutes ses données (élèves, tests, notes) ? Cette action est irréversible.`)) return;
+  state.classes = state.classes.filter(x => x.id !== c.id);
+  state.currentClassId = state.classes[0]?.id || null;
+  state.currentSemestre = 'semestre1';
+  saveData();
+  renderAll();
+  toast('Classe supprimée');
+}
+
+// =========================================================
+// ÉLÈVE ACTIONS
+// =========================================================
+function openAddEleve() {
+  editingEleveId = null;
+  document.getElementById('modal-eleve-title').textContent = 'Ajouter un élève';
+  document.getElementById('eleve-prenom').value = '';
+  document.getElementById('eleve-nom').value = '';
+  openModal('modal-eleve');
+  setTimeout(() => document.getElementById('eleve-prenom').focus(), 100);
+}
+
+function editEleve(id) {
+  const c = getCurrentClasse();
+  if (!c) return;
+  const e = c.eleves.find(x => x.id === id);
+  if (!e) return;
+  editingEleveId = id;
+  document.getElementById('modal-eleve-title').textContent = 'Modifier l\'élève';
+  document.getElementById('eleve-prenom').value = e.prenom;
+  document.getElementById('eleve-nom').value = e.nom;
+  openModal('modal-eleve');
+  setTimeout(() => document.getElementById('eleve-prenom').focus(), 100);
+}
+
+function saveEleve() {
+  const prenom = document.getElementById('eleve-prenom').value.trim();
+  const nom = document.getElementById('eleve-nom').value.trim();
+  if (!prenom || !nom) { toast('Prénom et nom requis'); return; }
+  const c = getCurrentClasse();
+  if (!c) return;
+  if (editingEleveId) {
+    const e = c.eleves.find(x => x.id === editingEleveId);
+    if (e) { e.prenom = prenom; e.nom = nom; }
+    toast('Élève modifié');
+  } else {
+    c.eleves.push({ id: uid(), prenom, nom });
+    toast('Élève ajouté');
+  }
+  saveData();
+  closeModal('modal-eleve');
+  renderContent();
+}
+
+function deleteEleve(id) {
+  const c = getCurrentClasse();
+  if (!c) return;
+  const e = c.eleves.find(x => x.id === id);
+  if (!e) return;
+  if (!confirm(`Supprimer ${e.prenom} ${e.nom} et toutes ses notes (dans tous les semestres et l'examen) ?`)) return;
+  c.eleves = c.eleves.filter(x => x.id !== id);
+  ['semestre1','semestre2','examen'].forEach(s => {
+    if (c[s] && c[s].notes) {
+      Object.keys(c[s].notes).forEach(k => { if (k.startsWith(id + '_')) delete c[s].notes[k]; });
+    }
+    if (c[s] && c[s].customTotals) {
+      Object.keys(c[s].customTotals).forEach(k => { if (k.startsWith(id + '_')) delete c[s].customTotals[k]; });
+    }
+  });
+  saveData();
+  renderContent();
+  toast('Élève supprimé');
+}
+
+// =========================================================
+// TEST ACTIONS
+// =========================================================
+function openAddTest() {
+  editingTestId = null;
+  modalSemestreContext = state.currentSemestre;
+  const isExamen = state.currentSemestre === 'examen';
+  document.getElementById('modal-test-title').textContent = isExamen ? 'Ajouter un examen' : 'Ajouter un test';
+  document.getElementById('test-nom').value = '';
+  document.getElementById('test-total').value = '';
+  document.getElementById('test-coef').value = '1';
+  openModal('modal-test');
+  setTimeout(() => document.getElementById('test-nom').focus(), 100);
+}
+
+function editTest(id) {
+  const c = getCurrentClasse();
+  if (!c) return;
+  const section = c[state.currentSemestre];
+  const t = section.tests.find(x => x.id === id);
+  if (!t) return;
+  editingTestId = id;
+  modalSemestreContext = state.currentSemestre;
+  document.getElementById('modal-test-title').textContent = 'Modifier';
+  document.getElementById('test-nom').value = t.nom;
+  document.getElementById('test-total').value = t.total;
+  document.getElementById('test-coef').value = getCoef(t);
+  openModal('modal-test');
+  setTimeout(() => document.getElementById('test-nom').focus(), 100);
+}
+
+function saveTest() {
+  const nom = document.getElementById('test-nom').value.trim();
+  const total = parseFloat(document.getElementById('test-total').value);
+  const coefRaw = document.getElementById('test-coef').value.trim().replace(',', '.');
+  let coef = parseFloat(coefRaw);
+  if (!coef || coef <= 0 || isNaN(coef)) coef = 1;
+  if (!nom) { toast('Nom requis'); return; }
+  if (!total || total <= 0) { toast('Total invalide'); return; }
+  const c = getCurrentClasse();
+  if (!c) return;
+  const section = c[modalSemestreContext];
+  if (editingTestId) {
+    const t = section.tests.find(x => x.id === editingTestId);
+    if (t) { t.nom = nom; t.total = total; t.coef = coef; }
+    toast('Modifié');
+  } else {
+    section.tests.push({ id: uid(), nom, total, coef });
+    toast('Ajouté');
+  }
+  saveData();
+  closeModal('modal-test');
+  renderContent();
+}
+
+function deleteTest(id) {
+  const c = getCurrentClasse();
+  if (!c) return;
+  const section = c[state.currentSemestre];
+  const t = section.tests.find(x => x.id === id);
+  if (!t) return;
+  if (!confirm(`Supprimer "${t.nom}" et toutes les notes associées ?`)) return;
+  section.tests = section.tests.filter(x => x.id !== id);
+  Object.keys(section.notes).forEach(k => { if (k.endsWith('_' + id)) delete section.notes[k]; });
+  if (section.customTotals) {
+    Object.keys(section.customTotals).forEach(k => { if (k.endsWith('_' + id)) delete section.customTotals[k]; });
+  }
+  saveData();
+  renderContent();
+  toast('Supprimé');
+}
+
+// =========================================================
+// CUSTOM TOTAL (test différent pour un élève)
+// =========================================================
+function openCustomTotal(eleveId, testId) {
+  const c = getCurrentClasse();
+  if (!c) return;
+  const section = c[state.currentSemestre];
+  const test = section.tests.find(t => t.id === testId);
+  const eleve = c.eleves.find(e => e.id === eleveId);
+  if (!test || !eleve) return;
+
+  customTotalContext = { eleveId, testId, semestre: state.currentSemestre };
+  const key = eleveId + '_' + testId;
+  const hasCustom = section.customTotals && section.customTotals[key] !== undefined && section.customTotals[key] !== null;
+  const currentVal = hasCustom ? section.customTotals[key] : test.total;
+
+  document.getElementById('custom-total-context').innerHTML =
+    `Pour <strong>${esc(eleve.prenom)} ${esc(eleve.nom)}</strong> sur le test <strong>${esc(test.nom)}</strong><br>
+     <span style="color:var(--text3)">Total par défaut : ${test.total} pts</span>`;
+  document.getElementById('custom-total-input').value = currentVal;
+  document.getElementById('custom-total-reset').style.display = hasCustom ? 'inline-flex' : 'none';
+  openModal('modal-custom-total');
+  setTimeout(() => {
+    const input = document.getElementById('custom-total-input');
+    input.focus();
+    input.select();
+  }, 100);
+}
+
+function saveCustomTotal() {
+  if (!customTotalContext) return;
+  const c = getCurrentClasse();
+  if (!c) return;
+  const section = c[customTotalContext.semestre];
+  const test = section.tests.find(t => t.id === customTotalContext.testId);
+  if (!test) return;
+
+  const raw = document.getElementById('custom-total-input').value.trim().replace(',', '.');
+  const val = parseFloat(raw);
+  if (!val || val <= 0) { toast('Total invalide'); return; }
+
+  const key = customTotalContext.eleveId + '_' + customTotalContext.testId;
+  if (val === test.total) {
+    // Same as default — remove the custom override
+    if (section.customTotals) delete section.customTotals[key];
+    toast('Total par défaut rétabli');
+  } else {
+    if (!section.customTotals) section.customTotals = {};
+    section.customTotals[key] = val;
+    // Si pts > nouveau total, on plafonne
+    if (section.notes[key] !== undefined && section.notes[key] > val) {
+      section.notes[key] = val;
+    }
+    toast('Total personnalisé enregistré');
+  }
+  saveData();
+  closeModal('modal-custom-total');
+  renderContent();
+}
+
+function resetCustomTotal() {
+  if (!customTotalContext) return;
+  const c = getCurrentClasse();
+  if (!c) return;
+  const section = c[customTotalContext.semestre];
+  const key = customTotalContext.eleveId + '_' + customTotalContext.testId;
+  if (section.customTotals) delete section.customTotals[key];
+  saveData();
+  closeModal('modal-custom-total');
+  renderContent();
+  toast('Total par défaut rétabli');
+}
+
+// =========================================================
+// CSV IMPORT
+// =========================================================
+let csvImportBuffer = null; // élèves à importer après confirmation
+
+function openCSVImport() {
+  if (!getCurrentClasse()) { toast('Sélectionnez d\'abord une classe'); return; }
+  document.getElementById('csv-import-file').click();
+}
+
+function handleCSVFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text = e.target.result;
+      const result = parseStudentsCSV(text);
+      showCSVPreview(result);
+    } catch(err) {
+      toast('⚠ Impossible de lire le fichier');
+      console.error(err);
+    }
+    event.target.value = '';
+  };
+  reader.onerror = () => { toast('⚠ Erreur de lecture'); event.target.value = ''; };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// Parse une ligne CSV en respectant les guillemets
+function parseCSVLine(line, sep) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (ch === sep && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result.map(c => c.trim());
+}
+
+// Détecte séparateur, trouve l'en-tête, extrait nom + prénom
+function parseStudentsCSV(text) {
+  // Enlève le BOM UTF-8 si présent
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+  // Détection séparateur (virgule vs point-virgule vs tabulation)
+  const sample = text.slice(0, 2000);
+  const counts = {
+    ',': (sample.match(/,/g) || []).length,
+    ';': (sample.match(/;/g) || []).length,
+    '\t': (sample.match(/\t/g) || []).length
+  };
+  const sep = Object.keys(counts).reduce((a, b) => counts[a] >= counts[b] ? a : b);
+
+  // Découpe en lignes
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length === 0) throw new Error('Fichier vide');
+
+  const rows = lines.map(l => parseCSVLine(l, sep));
+
+  // Trouve la ligne d'en-tête (contient "Nom" ET "Prénom"/"Prenom")
+  function normalize(s) {
+    return String(s || '').toLowerCase().replace(/[éèêë]/g, 'e').replace(/[àâ]/g, 'a').trim();
+  }
+  let headerIdx = -1, nomIdx = -1, prenomIdx = -1;
+  for (let i = 0; i < Math.min(10, rows.length); i++) {
+    const r = rows[i].map(normalize);
+    const n = r.findIndex(c => c === 'nom');
+    const p = r.findIndex(c => c === 'prenom');
+    if (n >= 0 && p >= 0) { headerIdx = i; nomIdx = n; prenomIdx = p; break; }
+  }
+  if (headerIdx < 0) {
+    throw new Error('Colonnes "Nom" et "Prénom" introuvables');
+  }
+
+  // Extrait les élèves
+  const students = [];
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    const nom = (r[nomIdx] || '').trim();
+    const prenom = (r[prenomIdx] || '').trim();
+    if (nom && prenom) students.push({ prenom, nom });
+  }
+
+  // Déduplique par rapport aux élèves déjà présents dans la classe
+  const classe = getCurrentClasse();
+  const existing = new Set();
+  classe.eleves.forEach(e => existing.add((e.prenom + '|' + e.nom).toLowerCase()));
+
+  const toImport = [];
+  const duplicates = [];
+  students.forEach(s => {
+    const key = (s.prenom + '|' + s.nom).toLowerCase();
+    if (existing.has(key)) duplicates.push(s);
+    else { toImport.push(s); existing.add(key); }
+  });
+
+  return { toImport, duplicates, totalFound: students.length };
+}
+
+function showCSVPreview(result) {
+  csvImportBuffer = result.toImport;
+  const preview = document.getElementById('csv-preview');
+  const confirmBtn = document.getElementById('csv-import-confirm');
+
+  if (result.totalFound === 0) {
+    preview.innerHTML = `<div style="padding:14px;background:var(--red-light);color:#7B0D14;border-radius:8px;font-size:14px">
+      Aucun élève trouvé dans le fichier. Vérifiez que les colonnes "Nom" et "Prénom" existent.
+    </div>`;
+    confirmBtn.style.display = 'none';
+    openModal('modal-import-csv');
+    return;
+  }
+
+  let html = `<div style="font-size:14px;color:var(--text);margin-bottom:10px">
+    <strong>${result.totalFound}</strong> élève${result.totalFound > 1 ? 's' : ''} trouvé${result.totalFound > 1 ? 's' : ''} dans le fichier
+  </div>`;
+
+  if (result.toImport.length > 0) {
+    html += `<div style="font-size:12px;color:var(--text2);margin-bottom:6px">À importer :</div>
+      <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--surface2)">`;
+    result.toImport.forEach(s => {
+      html += `<div style="font-size:13px;padding:3px 6px">${esc(s.prenom)} ${esc(s.nom)}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (result.duplicates.length > 0) {
+    html += `<div style="margin-top:10px;padding:10px 12px;background:var(--amber-light);color:#78350F;border-radius:8px;font-size:13px">
+      ⚠ <strong>${result.duplicates.length}</strong> doublon${result.duplicates.length > 1 ? 's' : ''} ignoré${result.duplicates.length > 1 ? 's' : ''} (déjà dans la classe)
+    </div>`;
+  }
+
+  preview.innerHTML = html;
+  if (result.toImport.length === 0) {
+    confirmBtn.style.display = 'none';
+  } else {
+    confirmBtn.style.display = 'inline-flex';
+    confirmBtn.textContent = `Importer ${result.toImport.length} élève${result.toImport.length > 1 ? 's' : ''}`;
+  }
+  openModal('modal-import-csv');
+}
+
+function confirmImportCSV() {
+  if (!csvImportBuffer || csvImportBuffer.length === 0) return;
+  const c = getCurrentClasse();
+  if (!c) return;
+  csvImportBuffer.forEach(s => {
+    c.eleves.push({ id: uid(), prenom: s.prenom, nom: s.nom });
+  });
+  const count = csvImportBuffer.length;
+  csvImportBuffer = null;
+  saveData();
+  closeModal('modal-import-csv');
+  renderContent();
+  toast(`✓ ${count} élève${count > 1 ? 's' : ''} importé${count > 1 ? 's' : ''}`);
+}
+
+// =========================================================
+// GRADE INPUT
+// =========================================================
+function onPtsChange(e) {
+  const input = e.target;
+  const eleveId = input.dataset.eleve;
+  const testId = input.dataset.test;
+  const c = getCurrentClasse();
+  if (!c) return;
+  const section = c[state.currentSemestre];
+  const test = section.tests.find(t => t.id === testId);
+  if (!test) return;
+  const effectiveTotal = getEffectiveTotal(section, eleveId, testId);
+
+  let val = input.value.trim();
+  const key = eleveId + '_' + testId;
+
+  if (val === '') {
+    delete section.notes[key];
+  } else {
+    val = val.replace(',', '.');
+    let num = parseFloat(val);
+    if (isNaN(num)) {
+      input.value = '';
+      delete section.notes[key];
+    } else {
+      if (num < 0) num = 0;
+      if (num > effectiveTotal) num = effectiveTotal;
+      section.notes[key] = num;
+      input.value = num;
+    }
+  }
+  saveData();
+  renderContent();
+}
+
+// =========================================================
+// MODALS
+// =========================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openMenuModal() { openModal('modal-menu'); }
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+  if (e.key === 'Enter' && !e.shiftKey) {
+    if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
+    if (document.getElementById('modal-classe').classList.contains('open')) { e.preventDefault(); saveClasse(); }
+    else if (document.getElementById('modal-eleve').classList.contains('open')) { e.preventDefault(); saveEleve(); }
+    else if (document.getElementById('modal-test').classList.contains('open')) { e.preventDefault(); saveTest(); }
+    else if (document.getElementById('modal-custom-total').classList.contains('open')) { e.preventDefault(); saveCustomTotal(); }
+  }
+});
+
+// =========================================================
+// TOAST
+// =========================================================
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// =========================================================
+// SERVICE WORKER
+// =========================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// =========================================================
+// INIT
+// =========================================================
+loadData();
+renderAll();
+</script>
+</body>
+</html>
