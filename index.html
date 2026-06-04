@@ -75,21 +75,58 @@ body {
 .sidebar-header-text p { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
 .sidebar-label {
-  padding: 16px 18px 8px;
+  padding: 14px 18px 6px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text3);
 }
-.sidebar-list {
-  padding: 0 10px;
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  flex-shrink: 0;
+}
+.sidebar-section:last-child { border-bottom: none; }
+.sidebar-section-classes {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 12px;
+}
+.sidebar-section-classes .sidebar-list {
   flex: 1;
   overflow-y: auto;
 }
-.sidebar-list-empty {
-  padding: 10px 14px;
+.sidebar-list {
+  padding: 0 10px;
+  max-height: 28vh;
+  overflow-y: auto;
+}
+.sidebar-section-classes .sidebar-list { max-height: none; }
+.sidebar-add {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 6px 10px 4px;
+  padding: 8px 12px;
+  border: 1px dashed var(--border2);
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
   font-size: 13px;
+  color: var(--text2);
+  font-family: inherit;
+  font-weight: 500;
+  text-align: left;
+  width: calc(100% - 20px);
+}
+.sidebar-add:hover { background: var(--bg); color: var(--text); }
+.sidebar-add svg { width: 13px; height: 13px; flex-shrink: 0; }
+.sidebar-list-empty {
+  padding: 8px 14px;
+  font-size: 12px;
   color: var(--text3);
   font-style: italic;
 }
@@ -148,10 +185,6 @@ body {
 .sidebar-item-menu:hover { background: var(--bg); color: var(--text); }
 .sidebar-item.active .sidebar-item-menu:hover { background: rgba(0,0,0,0.05); }
 .sidebar-item-menu svg { width: 16px; height: 16px; }
-.sidebar-footer {
-  padding: 14px 12px;
-  border-top: 1px solid var(--border);
-}
 
 /* APP LAYOUT */
 .app-layout { min-height: 100vh; display: flex; flex-direction: column; }
@@ -708,12 +741,22 @@ body {
       <p>Gestion des notes</p>
     </div>
   </div>
-  <div class="sidebar-label">Classes</div>
-  <div class="sidebar-list" id="sidebar-list"></div>
-  <div class="sidebar-footer">
-    <button class="btn btn-primary" onclick="openAddClasse()" style="width:100%">
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Année scolaire</div>
+    <div class="sidebar-list" id="annee-list"></div>
+    <button class="sidebar-add" onclick="openAddAnnee()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Ajouter une classe
+      Nouvelle année
+    </button>
+  </div>
+
+  <div class="sidebar-section sidebar-section-classes">
+    <div class="sidebar-label">Classes</div>
+    <div class="sidebar-list" id="class-list"></div>
+    <button class="sidebar-add" onclick="openAddClasse()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nouvelle classe
     </button>
   </div>
 </aside>
@@ -738,7 +781,8 @@ body {
     </div>
   </div>
 
-  <!-- CLASS BAR (mobile only) -->
+  <!-- CLASS BARS (mobile only) -->
+  <div class="class-bar" id="annee-bar"></div>
   <div class="class-bar" id="class-bar"></div>
 
   <!-- SEMESTRE TABS -->
@@ -747,6 +791,52 @@ body {
   <!-- MAIN -->
   <div class="main">
     <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- MODAL ANNÉE -->
+<div class="modal-overlay" id="modal-annee">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-annee-title">Nouvelle année</h3>
+      <button class="btn-icon" onclick="closeModal('modal-annee')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Année scolaire</label>
+        <input class="form-input" id="annee-nom" placeholder="ex: 2025-2026" autocomplete="off">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-annee')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveAnnee()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ANNÉE ACTIONS -->
+<div class="modal-overlay" id="modal-annee-actions">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-annee-actions-title">Options</h3>
+      <button class="btn-icon" onclick="closeModal('modal-annee-actions')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="action-list">
+        <button class="action-item" onclick="editCurrentAnnee()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Renommer
+        </button>
+        <button class="action-item danger" onclick="deleteCurrentAnnee()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Supprimer l'année
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -952,11 +1042,13 @@ body {
 const STORAGE_KEY = 'notes-eleves-v2';
 
 let state = {
-  classes: [],
+  annees: [],
+  currentAnneeId: null,
   currentClassId: null,
   currentSemestre: 'semestre1'
 };
 
+let editingAnneeId = null;
 let editingClasseId = null;
 let editingEleveId = null;
 let editingTestId = null;
@@ -975,21 +1067,61 @@ function saveData(showToast = false) {
   }
 }
 
+function defaultAnneeName() {
+  const d = new Date();
+  const month = d.getMonth() + 1;
+  const year = d.getFullYear();
+  // L'année scolaire commence en août
+  if (month >= 8) return `${year}-${year + 1}`;
+  return `${year - 1}-${year}`;
+}
+
 function loadData() {
+  let needsSave = false;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.classes) state.classes = parsed.classes;
-      if (parsed.currentClassId) state.currentClassId = parsed.currentClassId;
-      if (parsed.currentSemestre) state.currentSemestre = parsed.currentSemestre;
+      // Migration depuis l'ancien format (state.classes au niveau racine)
+      if (parsed.classes && !parsed.annees) {
+        state.annees = [{
+          id: uid(),
+          nom: defaultAnneeName(),
+          classes: parsed.classes
+        }];
+        state.currentAnneeId = state.annees[0].id;
+        state.currentClassId = parsed.currentClassId || null;
+        state.currentSemestre = parsed.currentSemestre || 'semestre1';
+        needsSave = true;
+      } else if (parsed.annees) {
+        state.annees = parsed.annees;
+        state.currentAnneeId = parsed.currentAnneeId || null;
+        state.currentClassId = parsed.currentClassId || null;
+        state.currentSemestre = parsed.currentSemestre || 'semestre1';
+      }
     }
   } catch(e) {}
-  if (state.currentClassId && !state.classes.find(c => c.id === state.currentClassId)) {
-    state.currentClassId = state.classes[0]?.id || null;
-  } else if (!state.currentClassId && state.classes.length) {
-    state.currentClassId = state.classes[0].id;
+
+  // Valide currentAnneeId
+  if (state.currentAnneeId && !state.annees.find(a => a.id === state.currentAnneeId)) {
+    state.currentAnneeId = state.annees[0]?.id || null;
+  } else if (!state.currentAnneeId && state.annees.length) {
+    state.currentAnneeId = state.annees[0].id;
   }
+
+  // Valide currentClassId dans l'année courante
+  const annee = getCurrentAnnee();
+  if (annee) {
+    if (state.currentClassId && !annee.classes.find(c => c.id === state.currentClassId)) {
+      state.currentClassId = annee.classes[0]?.id || null;
+    } else if (!state.currentClassId && annee.classes.length) {
+      state.currentClassId = annee.classes[0].id;
+    }
+  } else {
+    state.currentClassId = null;
+  }
+
+  if (needsSave) saveData();
 }
 
 function exportJSON() {
@@ -1017,9 +1149,22 @@ function importJSON(event) {
   reader.onload = e => {
     try {
       const parsed = JSON.parse(e.target.result);
-      if (!parsed.classes || !Array.isArray(parsed.classes)) throw new Error('Format invalide');
-      state.classes = parsed.classes;
-      state.currentClassId = parsed.currentClassId || parsed.classes[0]?.id || null;
+      // Compat ancien format
+      if (parsed.classes && !parsed.annees) {
+        state.annees = [{
+          id: uid(),
+          nom: defaultAnneeName(),
+          classes: parsed.classes
+        }];
+        state.currentAnneeId = state.annees[0].id;
+        state.currentClassId = parsed.currentClassId || null;
+      } else if (parsed.annees && Array.isArray(parsed.annees)) {
+        state.annees = parsed.annees;
+        state.currentAnneeId = parsed.currentAnneeId || parsed.annees[0]?.id || null;
+        state.currentClassId = parsed.currentClassId || null;
+      } else {
+        throw new Error('Format invalide');
+      }
       state.currentSemestre = parsed.currentSemestre || 'semestre1';
       saveData();
       closeModal('modal-menu');
@@ -1036,8 +1181,14 @@ function importJSON(event) {
 // =========================================================
 // HELPERS
 // =========================================================
+function getCurrentAnnee() {
+  return state.annees.find(a => a.id === state.currentAnneeId) || null;
+}
+
 function getCurrentClasse() {
-  return state.classes.find(c => c.id === state.currentClassId) || null;
+  const annee = getCurrentAnnee();
+  if (!annee) return null;
+  return annee.classes.find(c => c.id === state.currentClassId) || null;
 }
 
 function uid() {
@@ -1139,16 +1290,43 @@ function syncEleves(classe) {
 }
 
 // =========================================================
-// RENDER : SIDEBAR
+// RENDER : SIDEBAR (2 sections : années + classes)
 // =========================================================
 function renderSidebar() {
-  const list = document.getElementById('sidebar-list');
-  if (state.classes.length === 0) {
-    list.innerHTML = `<div class="sidebar-list-empty">Aucune classe.<br>Cliquez sur "Ajouter une classe" ci-dessous.</div>`;
+  // ANNÉES
+  const anneeList = document.getElementById('annee-list');
+  if (state.annees.length === 0) {
+    anneeList.innerHTML = `<div class="sidebar-list-empty">Aucune année.</div>`;
+  } else {
+    let html = '';
+    state.annees.forEach(a => {
+      const active = a.id === state.currentAnneeId;
+      html += `<div class="sidebar-item ${active ? 'active' : ''}">
+        <button class="sidebar-item-btn" onclick="selectAnnee('${a.id}')">
+          <span class="sidebar-item-dot"></span>
+          <span class="sidebar-item-name">${esc(a.nom)}</span>
+        </button>
+        ${active ? `<button class="sidebar-item-menu" onclick="openAnneeActions()" title="Options">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </button>` : ''}
+      </div>`;
+    });
+    anneeList.innerHTML = html;
+  }
+
+  // CLASSES (de l'année courante)
+  const classList = document.getElementById('class-list');
+  const annee = getCurrentAnnee();
+  if (!annee) {
+    classList.innerHTML = `<div class="sidebar-list-empty">Sélectionnez une année.</div>`;
+    return;
+  }
+  if (annee.classes.length === 0) {
+    classList.innerHTML = `<div class="sidebar-list-empty">Aucune classe.</div>`;
     return;
   }
   let html = '';
-  state.classes.forEach(c => {
+  annee.classes.forEach(c => {
     const active = c.id === state.currentClassId;
     html += `<div class="sidebar-item ${active ? 'active' : ''}">
       <button class="sidebar-item-btn" onclick="selectClasse('${c.id}')">
@@ -1160,29 +1338,61 @@ function renderSidebar() {
       </button>` : ''}
     </div>`;
   });
-  list.innerHTML = html;
+  classList.innerHTML = html;
 }
 
 // =========================================================
-// RENDER : CLASS BAR (mobile)
+// RENDER : MOBILE BARS (années + classes)
 // =========================================================
 function renderClassBar() {
-  const bar = document.getElementById('class-bar');
-  if (state.classes.length === 0) {
-    bar.innerHTML = `<button class="class-chip-add" onclick="openAddClasse()">
+  // Année bar
+  const aBar = document.getElementById('annee-bar');
+  if (state.annees.length === 0) {
+    aBar.innerHTML = `<button class="class-chip-add" onclick="openAddAnnee()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Créer une classe
+      Créer une année
     </button>`;
+  } else {
+    let html = '<span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-right:4px;flex-shrink:0">Année</span>';
+    state.annees.forEach(a => {
+      const active = a.id === state.currentAnneeId;
+      html += `<button class="class-chip ${active ? 'active' : ''}" onclick="selectAnnee('${a.id}')">${esc(a.nom)}</button>`;
+    });
+    html += `<button class="class-chip-add" onclick="openAddAnnee()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>`;
+    if (state.currentAnneeId) {
+      html += `<button class="class-edit-btn-mobile" onclick="openAnneeActions()" title="Options">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </button>`;
+    }
+    aBar.innerHTML = html;
+  }
+
+  // Class bar
+  const bar = document.getElementById('class-bar');
+  const annee = getCurrentAnnee();
+  if (!annee) {
+    bar.innerHTML = '';
+    bar.style.display = 'none';
     return;
   }
-  let html = '';
-  state.classes.forEach(c => {
+  bar.style.display = 'flex';
+  if (annee.classes.length === 0) {
+    bar.innerHTML = `<span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-right:4px;flex-shrink:0">Classe</span>
+      <button class="class-chip-add" onclick="openAddClasse()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Créer une classe
+      </button>`;
+    return;
+  }
+  let html = '<span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-right:4px;flex-shrink:0">Classe</span>';
+  annee.classes.forEach(c => {
     const active = c.id === state.currentClassId;
     html += `<button class="class-chip ${active ? 'active' : ''}" onclick="selectClasse('${c.id}')">${esc(c.nom)}</button>`;
   });
   html += `<button class="class-chip-add" onclick="openAddClasse()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Nouvelle
   </button>`;
   if (state.currentClassId) {
     html += `<button class="class-edit-btn-mobile" onclick="openClasseActions()" title="Options">
@@ -1220,25 +1430,47 @@ function renderSemestreTabs() {
 // =========================================================
 function renderContent() {
   const content = document.getElementById('content');
+  const annee = getCurrentAnnee();
   const classe = getCurrentClasse();
 
   // Update topbar title
   const topbarTitle = document.getElementById('topbar-title');
-  if (classe) {
-    const semestreLabel = state.currentSemestre === 'examen' ? 'Examen' : state.currentSemestre === 'semestre1' ? 'Semestre 1' : 'Semestre 2';
-    topbarTitle.textContent = `${classe.nom} — ${semestreLabel}`;
+  if (annee && classe) {
+    const semestreLabel = state.currentSemestre === 'examen' ? 'Examen' : state.currentSemestre === 'semestre1' ? 'Sem. 1' : 'Sem. 2';
+    topbarTitle.textContent = `${annee.nom} • ${classe.nom} • ${semestreLabel}`;
+  } else if (annee) {
+    topbarTitle.textContent = annee.nom;
   } else {
     topbarTitle.textContent = 'Notes Élèves';
   }
 
-  if (state.classes.length === 0) {
+  // Welcome 1 : aucune année
+  if (state.annees.length === 0) {
+    content.innerHTML = `
+      <div class="welcome">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <h2>Bienvenue !</h2>
+        <p>Commencez par créer une année scolaire pour organiser vos classes.</p>
+        <button class="btn btn-primary" onclick="openAddAnnee()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Créer une année scolaire
+        </button>
+      </div>`;
+    return;
+  }
+
+  // Welcome 2 : pas de classe dans l'année courante
+  if (!annee) { content.innerHTML = ''; return; }
+  if (annee.classes.length === 0) {
     content.innerHTML = `
       <div class="welcome">
         <div class="welcome-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
         </div>
-        <h2>Bienvenue !</h2>
-        <p>Commencez par créer votre première classe pour saisir les notes de vos élèves.</p>
+        <h2>${esc(annee.nom)}</h2>
+        <p>Ajoutez votre première classe pour cette année scolaire.</p>
         <button class="btn btn-primary" onclick="openAddClasse()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Créer une classe
@@ -1443,6 +1675,85 @@ function renderAll() {
 }
 
 // =========================================================
+// ANNÉE ACTIONS
+// =========================================================
+function selectAnnee(id) {
+  state.currentAnneeId = id;
+  const annee = getCurrentAnnee();
+  state.currentClassId = annee?.classes[0]?.id || null;
+  state.currentSemestre = 'semestre1';
+  saveData();
+  renderAll();
+}
+
+function openAddAnnee() {
+  editingAnneeId = null;
+  document.getElementById('modal-annee-title').textContent = 'Nouvelle année';
+  const input = document.getElementById('annee-nom');
+  input.value = '';
+  input.placeholder = 'ex: ' + defaultAnneeName();
+  openModal('modal-annee');
+  setTimeout(() => input.focus(), 100);
+}
+
+function openAnneeActions() {
+  const a = getCurrentAnnee();
+  if (!a) return;
+  document.getElementById('modal-annee-actions-title').textContent = `Options : ${a.nom}`;
+  openModal('modal-annee-actions');
+}
+
+function editCurrentAnnee() {
+  closeModal('modal-annee-actions');
+  const a = getCurrentAnnee();
+  if (!a) return;
+  editingAnneeId = a.id;
+  document.getElementById('modal-annee-title').textContent = 'Renommer l\'année';
+  document.getElementById('annee-nom').value = a.nom;
+  openModal('modal-annee');
+  setTimeout(() => document.getElementById('annee-nom').focus(), 100);
+}
+
+function saveAnnee() {
+  let nom = document.getElementById('annee-nom').value.trim();
+  if (!nom) nom = defaultAnneeName();
+  if (editingAnneeId) {
+    const a = state.annees.find(x => x.id === editingAnneeId);
+    if (a) a.nom = nom;
+    toast('Année modifiée');
+  } else {
+    const newAnnee = { id: uid(), nom, classes: [] };
+    state.annees.push(newAnnee);
+    state.currentAnneeId = newAnnee.id;
+    state.currentClassId = null;
+    state.currentSemestre = 'semestre1';
+    toast('Année créée');
+  }
+  saveData();
+  closeModal('modal-annee');
+  renderAll();
+}
+
+function deleteCurrentAnnee() {
+  closeModal('modal-annee-actions');
+  const a = getCurrentAnnee();
+  if (!a) return;
+  const nbClasses = a.classes.length;
+  const msg = nbClasses > 0
+    ? `Supprimer l'année "${a.nom}" et ses ${nbClasses} classe${nbClasses > 1 ? 's' : ''} (avec tous les élèves, tests et notes) ? Cette action est irréversible.`
+    : `Supprimer l'année "${a.nom}" ?`;
+  if (!confirm(msg)) return;
+  state.annees = state.annees.filter(x => x.id !== a.id);
+  state.currentAnneeId = state.annees[0]?.id || null;
+  const annee = getCurrentAnnee();
+  state.currentClassId = annee?.classes[0]?.id || null;
+  state.currentSemestre = 'semestre1';
+  saveData();
+  renderAll();
+  toast('Année supprimée');
+}
+
+// =========================================================
 // CLASS ACTIONS
 // =========================================================
 function selectClasse(id) {
@@ -1490,8 +1801,10 @@ function saveClasse() {
   const nom = document.getElementById('classe-nom').value.trim();
   const hasExamen = document.getElementById('classe-examen').checked;
   if (!nom) { toast('Nom requis'); return; }
+  const annee = getCurrentAnnee();
+  if (!annee) { toast('Créez d\'abord une année'); return; }
   if (editingClasseId) {
-    const c = state.classes.find(x => x.id === editingClasseId);
+    const c = annee.classes.find(x => x.id === editingClasseId);
     if (c) { c.nom = nom; c.hasExamen = hasExamen; }
     toast('Classe modifiée');
   } else {
@@ -1500,11 +1813,11 @@ function saveClasse() {
       nom,
       hasExamen,
       eleves: [],
-      semestre1: { tests: [], notes: {} },
-      semestre2: { tests: [], notes: {} },
-      examen: { tests: [], notes: {} }
+      semestre1: { tests: [], notes: {}, customTotals: {} },
+      semestre2: { tests: [], notes: {}, customTotals: {} },
+      examen: { tests: [], notes: {}, customTotals: {} }
     };
-    state.classes.push(newClasse);
+    annee.classes.push(newClasse);
     state.currentClassId = newClasse.id;
     state.currentSemestre = 'semestre1';
     toast('Classe créée');
@@ -1516,11 +1829,12 @@ function saveClasse() {
 
 function deleteCurrentClasse() {
   closeModal('modal-classe-actions');
+  const annee = getCurrentAnnee();
   const c = getCurrentClasse();
-  if (!c) return;
+  if (!annee || !c) return;
   if (!confirm(`Supprimer la classe "${c.nom}" et toutes ses données (élèves, tests, notes) ? Cette action est irréversible.`)) return;
-  state.classes = state.classes.filter(x => x.id !== c.id);
-  state.currentClassId = state.classes[0]?.id || null;
+  annee.classes = annee.classes.filter(x => x.id !== c.id);
+  state.currentClassId = annee.classes[0]?.id || null;
   state.currentSemestre = 'semestre1';
   saveData();
   renderAll();
@@ -1959,7 +2273,8 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Enter' && !e.shiftKey) {
     if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
-    if (document.getElementById('modal-classe').classList.contains('open')) { e.preventDefault(); saveClasse(); }
+    if (document.getElementById('modal-annee').classList.contains('open')) { e.preventDefault(); saveAnnee(); }
+    else if (document.getElementById('modal-classe').classList.contains('open')) { e.preventDefault(); saveClasse(); }
     else if (document.getElementById('modal-eleve').classList.contains('open')) { e.preventDefault(); saveEleve(); }
     else if (document.getElementById('modal-test').classList.contains('open')) { e.preventDefault(); saveTest(); }
     else if (document.getElementById('modal-custom-total').classList.contains('open')) { e.preventDefault(); saveCustomTotal(); }
