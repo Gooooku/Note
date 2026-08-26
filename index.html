@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Notes">
 <meta name="theme-color" content="#2D6A4F">
 <title>Notes Élèves</title>
-<script src="xlsx.mini.min.js"></script>
+<script src="xlsx.core.min.js"></script>
 <style>
 :root {
   --bg: #F4F2EE;
@@ -1142,7 +1142,7 @@ body {
 // DATA MODEL
 // =========================================================
 const STORAGE_KEY = 'notes-eleves-v2';
-const APP_VERSION = 'v1.8.0';
+const APP_VERSION = 'v1.8.1';
 
 let state = {
   annees: [],
@@ -2381,7 +2381,7 @@ function handleImportFile(event) {
 
   if (isExcel) {
     if (typeof XLSX === 'undefined') {
-      toast('⚠ Librairie Excel non chargée');
+      toast('⚠ Librairie Excel non chargée. Vérifiez que xlsx.core.min.js est bien uploadé.');
       event.target.value = '';
       return;
     }
@@ -2390,20 +2390,19 @@ function handleImportFile(event) {
       try {
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: 'array' });
-        // Prend la première feuille
+        if (!wb.SheetNames || wb.SheetNames.length === 0) throw new Error('Aucune feuille dans le classeur');
         const firstSheetName = wb.SheetNames[0];
         const sheet = wb.Sheets[firstSheetName];
-        // Convertit en tableau 2D (chaque cellule en string)
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
         const result = parseStudentsFromRows(rows);
         showCSVPreview(result);
       } catch(err) {
-        console.error(err);
-        toast('⚠ Impossible de lire le fichier Excel');
+        console.error('Erreur import Excel:', err);
+        toast('⚠ ' + (err.message || 'Impossible de lire le fichier'));
       }
       event.target.value = '';
     };
-    reader.onerror = () => { toast('⚠ Erreur de lecture'); event.target.value = ''; };
+    reader.onerror = () => { toast('⚠ Erreur de lecture du fichier'); event.target.value = ''; };
     reader.readAsArrayBuffer(file);
   } else {
     // CSV / texte
@@ -2415,12 +2414,12 @@ function handleImportFile(event) {
         const result = parseStudentsFromRows(rows);
         showCSVPreview(result);
       } catch(err) {
-        console.error(err);
-        toast('⚠ Impossible de lire le fichier');
+        console.error('Erreur import CSV:', err);
+        toast('⚠ ' + (err.message || 'Impossible de lire le fichier'));
       }
       event.target.value = '';
     };
-    reader.onerror = () => { toast('⚠ Erreur de lecture'); event.target.value = ''; };
+    reader.onerror = () => { toast('⚠ Erreur de lecture du fichier'); event.target.value = ''; };
     reader.readAsText(file, 'UTF-8');
   }
 }
