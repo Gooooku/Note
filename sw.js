@@ -2,14 +2,14 @@
 // Permet l'utilisation hors ligne sur iPad via GitHub Pages.
 // Change la version pour forcer la mise à jour du cache après une modif.
 
-const VERSION = 'v1.8.0';
+const VERSION = 'v1.8.1';
 const CACHE = `notes-eleves-${VERSION}`;
 
 // Tous les chemins sont relatifs pour fonctionner sous /repo-name/ sur GitHub Pages
 const ASSETS = [
   './',
   './index.html',
-  './xlsx.mini.min.js'
+  './xlsx.core.min.js'
 ];
 
 // INSTALL — pré-cache des fichiers principaux
