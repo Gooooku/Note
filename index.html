@@ -554,6 +554,63 @@ body {
   margin-top: 2px;
   letter-spacing: 0.02em;
 }
+.test-coef-badge.zero {
+  color: var(--text3);
+  background: var(--bg);
+  border: 1px solid var(--border2);
+}
+
+/* Multi-part cells: petit input + affichage somme */
+.pts-input-multi { width: 50px; padding: 6px 4px; }
+.pts-sum {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  min-width: 28px;
+  text-align: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: var(--surface2);
+}
+.test-cell.test-cell-multi { min-width: 260px; }
+
+/* Colonne ignorée (coef 0) */
+.notes-table th.nocount { background: rgba(0,0,0,0.05); }
+.test-cell.nocount { background: rgba(0,0,0,0.025); }
+.test-cell.nocount .pts-input,
+.test-cell.nocount .pts-sum { color: var(--text3); }
+.test-cell.nocount .note-badge:not(.vide) { opacity: 0.55; }
+.test-cell.nocount .close-indicator { display: none; }
+.test-cell.nocount .pts-total { color: var(--text3); }
+
+/* Pied de tableau : moyenne classe par épreuve */
+.notes-table tfoot .tfoot-avg td {
+  background: var(--bg);
+  border-top: 2px solid var(--border2);
+  padding: 10px 12px;
+}
+.notes-table tfoot .tfoot-avg .nom-cell {
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.test-avg-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+}
 .test-col-actions { display: flex; gap: 3px; margin-top: 3px; }
 .test-mini-btn {
   width: 22px; height: 22px;
@@ -933,18 +990,46 @@ body {
         <label class="form-label">Nom du test</label>
         <input class="form-input" id="test-nom" placeholder="ex: Contrôle ch.3" autocomplete="off">
       </div>
-      <div class="form-row">
+      <label class="form-check">
+        <input type="checkbox" id="test-multi-part" onchange="toggleMultiPart()">
+        <span>Test en 2 parties (chaque partie a son propre total)</span>
+      </label>
+      <div id="test-total-single-block" class="form-row">
         <div class="form-group">
           <label class="form-label">Points au total</label>
           <input class="form-input" id="test-total" type="number" inputmode="decimal" min="0.5" step="0.5" placeholder="ex: 20">
         </div>
         <div class="form-group">
           <label class="form-label">Coefficient</label>
-          <input class="form-input" id="test-coef" type="number" inputmode="decimal" min="0.1" step="0.5" placeholder="1" value="1">
+          <input class="form-input" id="test-coef" type="number" inputmode="decimal" min="0" step="0.5" placeholder="1" value="1">
+        </div>
+      </div>
+      <div id="test-total-multi-block" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Partie 1 (pts)</label>
+            <input class="form-input" id="test-part1" type="number" inputmode="decimal" min="0.5" step="0.5" oninput="updatePartsSum()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Partie 2 (pts)</label>
+            <input class="form-input" id="test-part2" type="number" inputmode="decimal" min="0.5" step="0.5" oninput="updatePartsSum()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Coefficient</label>
+            <input class="form-input" id="test-coef-multi" type="number" inputmode="decimal" min="0" step="0.5" placeholder="1" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="visibility:hidden">.</label>
+            <div style="padding:10px 12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text2)">
+              Total : <strong id="test-parts-sum">0</strong> pts
+            </div>
+          </div>
         </div>
       </div>
       <div style="font-size:12px;color:var(--text3);font-style:italic">
-        Coefficient 1 = poids normal. 2 = compte double dans la moyenne.
+        Coef. 1 = normal · 2 = double · 0 = ne compte pas dans la moyenne.
       </div>
     </div>
     <div class="modal-footer">
@@ -975,8 +1060,9 @@ body {
         </button>
         <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
       </div>
-      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">
-        Formule : pts ÷ total × 5 + 1, arrondi à la demi
+      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;line-height:1.6">
+        Formule : pts ÷ total × 5 + 1, arrondi à la demi<br>
+        Version <span id="app-version-display"></span>
       </div>
     </div>
   </div>
@@ -1040,6 +1126,7 @@ body {
 // DATA MODEL
 // =========================================================
 const STORAGE_KEY = 'notes-eleves-v2';
+const APP_VERSION = 'v1.7.0';
 
 let state = {
   annees: [],
@@ -1219,11 +1306,58 @@ function hasCustomTotal(section, eleveId, testId) {
   return section.customTotals && section.customTotals[key] !== undefined && section.customTotals[key] !== null;
 }
 
-// Coefficient d'un test (1 par défaut, rétro-compat avec anciens tests sans coef)
+// Coefficient d'un test (1 par défaut, 0 autorisé, rétro-compat avec anciens tests sans coef)
 function getCoef(test) {
   const c = test && test.coef;
-  if (c === undefined || c === null || isNaN(Number(c)) || Number(c) <= 0) return 1;
+  if (c === undefined || c === null || isNaN(Number(c)) || Number(c) < 0) return 1;
   return Number(c);
+}
+
+// Test multi-parties pour un élève donné (pas si custom total)
+function isMultiPart(test) {
+  return Array.isArray(test.parts) && test.parts.length > 1;
+}
+function isMultiPartForCell(test, hasCustom) {
+  return !hasCustom && isMultiPart(test);
+}
+
+// Récupère les pts stockés (peut être un nombre ou un tableau selon multi-part)
+function getStoredPts(section, key) {
+  return section.notes[key];
+}
+
+// Total effectif des pts obtenus par un élève sur un test
+// Multi-part: null si toutes les parties ne sont pas remplies
+// Single: null si vide
+function getEffectivePts(section, test, eleveId, hasCustom) {
+  const key = eleveId + '_' + test.id;
+  const v = section.notes[key];
+  if (v === undefined || v === null || v === '') return null;
+
+  if (isMultiPartForCell(test, hasCustom)) {
+    if (!Array.isArray(v)) {
+      // Ancienne saisie en un seul nombre alors que le test est passé multi-parties
+      // → on considère la note comme incomplète
+      return null;
+    }
+    if (v.length < test.parts.length) return null;
+    let sum = 0;
+    for (let i = 0; i < test.parts.length; i++) {
+      if (v[i] === undefined || v[i] === null || v[i] === '') return null;
+      sum += Number(v[i]);
+    }
+    return sum;
+  }
+
+  // Single-part (ou custom total)
+  if (Array.isArray(v)) {
+    let sum = 0, hasAny = false;
+    v.forEach(p => {
+      if (p !== undefined && p !== null && p !== '') { sum += Number(p); hasAny = true; }
+    });
+    return hasAny ? sum : null;
+  }
+  return Number(v);
 }
 
 // Note d'un test — arrondie à la demi
@@ -1246,22 +1380,39 @@ function isCloseToNextGrade(pts, total) {
 }
 
 // Moyenne pondérée par coefficient — sur notes déjà arrondies, puis arrondie à la demi
+// Les tests avec coef 0 sont ignorés.
 function calcMoyenne(section, eleveId) {
   let weightedSum = 0;
   let totalCoef = 0;
   section.tests.forEach(t => {
-    const key = eleveId + '_' + t.id;
-    const v = section.notes[key];
-    if (v !== undefined && v !== '' && v !== null) {
-      const effectiveTotal = getEffectiveTotal(section, eleveId, t.id);
-      const note = calcNote(Number(v), effectiveTotal);
-      const coef = getCoef(t);
-      weightedSum += note * coef;
-      totalCoef += coef;
-    }
+    const coef = getCoef(t);
+    if (coef === 0) return;
+    const hasCustom = hasCustomTotal(section, eleveId, t.id);
+    const pts = getEffectivePts(section, t, eleveId, hasCustom);
+    if (pts === null) return;
+    const effectiveTotal = getEffectiveTotal(section, eleveId, t.id);
+    const note = calcNote(pts, effectiveTotal);
+    if (note === null) return;
+    weightedSum += note * coef;
+    totalCoef += coef;
   });
   if (totalCoef === 0) return null;
   return roundHalf(weightedSum / totalCoef);
+}
+
+// Moyenne de classe pour UN test — au dixième
+function calcTestClassAverage(section, test, eleves) {
+  const notes = [];
+  eleves.forEach(e => {
+    const hasCustom = hasCustomTotal(section, e.id, test.id);
+    const pts = getEffectivePts(section, test, e.id, hasCustom);
+    if (pts === null) return;
+    const effectiveTotal = getEffectiveTotal(section, e.id, test.id);
+    const n = calcNote(pts, effectiveTotal);
+    if (n !== null) notes.push(n);
+  });
+  if (notes.length === 0) return null;
+  return Math.round((notes.reduce((a,b) => a+b, 0) / notes.length) * 10) / 10;
 }
 
 function noteClass(n) {
@@ -1573,11 +1724,18 @@ function buildTable(classe, section) {
   let headCols = `<th>Élève</th>`;
   section.tests.forEach(t => {
     const coef = getCoef(t);
-    const coefBadge = coef !== 1 ? `<span class="test-coef-badge">Coef. ${coef}</span>` : '';
-    headCols += `<th>
+    const nocount = coef === 0;
+    const multi = isMultiPart(t);
+    const coefBadge = coef !== 1
+      ? `<span class="test-coef-badge ${nocount ? 'zero' : ''}">Coef. ${coef}</span>`
+      : '';
+    const totalDisplay = multi
+      ? `${t.parts[0]} + ${t.parts[1]} = ${t.total} pts`
+      : `/ ${t.total} pts`;
+    headCols += `<th class="${nocount ? 'nocount' : ''}">
       <div class="test-col-header">
-        <span class="test-name">${esc(t.nom)}</span>
-        <span class="test-total">/ ${t.total} pts</span>
+        <span class="test-name">${esc(t.nom)}${multi ? ' <span style="font-weight:400;font-size:10px;color:var(--text3)">(2 parties)</span>' : ''}</span>
+        <span class="test-total">${totalDisplay}</span>
         ${coefBadge}
         <div class="test-col-actions">
           <button class="test-mini-btn" onclick="editTest('${t.id}')" title="Modifier">
@@ -1597,14 +1755,20 @@ function buildTable(classe, section) {
     let testCols = '';
     section.tests.forEach(t => {
       const key = e.id + '_' + t.id;
-      const pts = section.notes[key] !== undefined ? section.notes[key] : '';
+      const coef = getCoef(t);
+      const nocount = coef === 0;
       const effectiveTotal = getEffectiveTotal(section, e.id, t.id);
       const isCustom = hasCustomTotal(section, e.id, t.id);
-      const note = pts !== '' && pts !== null ? calcNote(Number(pts), effectiveTotal) : null;
+      const multi = isMultiPartForCell(t, isCustom);
+
+      // Récupère les pts (nombre ou tableau)
+      const stored = section.notes[key];
+      const pts = getEffectivePts(section, t, e.id, isCustom);
+      const note = pts !== null ? calcNote(pts, effectiveTotal) : null;
       const noteBadge = note !== null
         ? `<span class="note-badge ${noteClass(note)}">${note.toFixed(1)}</span>`
         : `<span class="note-badge vide">—</span>`;
-      const closeBadge = (note !== null && isCloseToNextGrade(Number(pts), effectiveTotal))
+      const closeBadge = (note !== null && !nocount && isCloseToNextGrade(pts, effectiveTotal))
         ? `<span class="close-indicator" title="À 0.5 point de la note supérieure">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 14 12 8 18 14"/></svg>
           </span>`
@@ -1612,13 +1776,38 @@ function buildTable(classe, section) {
       const customTitle = isCustom
         ? `Total personnalisé (par défaut : ${t.total})`
         : 'Cliquez pour définir un total personnalisé';
-      testCols += `<td class="test-cell">
-        <div class="pts-inputs">
-          <input class="pts-input" type="number" inputmode="decimal" min="0" max="${effectiveTotal}" step="0.5"
-            data-eleve="${e.id}" data-test="${t.id}"
-            value="${pts}" placeholder="—">
+
+      let inputsHtml;
+      if (multi) {
+        const p1 = Array.isArray(stored) ? (stored[0] ?? '') : '';
+        const p2 = Array.isArray(stored) ? (stored[1] ?? '') : '';
+        inputsHtml = `
+          <input class="pts-input pts-input-multi" type="number" inputmode="decimal" min="0" max="${t.parts[0]}" step="0.5"
+            data-eleve="${e.id}" data-test="${t.id}" data-part="0"
+            value="${p1}" placeholder="P1" title="Partie 1 (/${t.parts[0]})">
+          <span class="pts-sep">+</span>
+          <input class="pts-input pts-input-multi" type="number" inputmode="decimal" min="0" max="${t.parts[1]}" step="0.5"
+            data-eleve="${e.id}" data-test="${t.id}" data-part="1"
+            value="${p2}" placeholder="P2" title="Partie 2 (/${t.parts[1]})">
+          <span class="pts-sep">=</span>
+          <span class="pts-sum">${pts !== null ? pts : '—'}</span>
           <span class="pts-sep">/</span>
           <button class="pts-total ${isCustom ? 'is-custom' : ''}" onclick="openCustomTotal('${e.id}','${t.id}')" title="${customTitle}">${effectiveTotal}${isCustom ? '*' : ''}</button>
+        `;
+      } else {
+        const val = (stored === undefined || stored === null || Array.isArray(stored)) ? '' : stored;
+        inputsHtml = `
+          <input class="pts-input" type="number" inputmode="decimal" min="0" max="${effectiveTotal}" step="0.5"
+            data-eleve="${e.id}" data-test="${t.id}"
+            value="${val}" placeholder="—">
+          <span class="pts-sep">/</span>
+          <button class="pts-total ${isCustom ? 'is-custom' : ''}" onclick="openCustomTotal('${e.id}','${t.id}')" title="${customTitle}">${effectiveTotal}${isCustom ? '*' : ''}</button>
+        `;
+      }
+
+      testCols += `<td class="test-cell ${multi ? 'test-cell-multi' : ''} ${nocount ? 'nocount' : ''}">
+        <div class="pts-inputs">
+          ${inputsHtml}
           ${noteBadge}
           ${closeBadge}
         </div>
@@ -1638,10 +1827,33 @@ function buildTable(classe, section) {
     </tr>`;
   });
 
+  // Pied de tableau : moyenne classe par épreuve
+  let footerCols = '';
+  section.tests.forEach(t => {
+    const coef = getCoef(t);
+    const nocount = coef === 0;
+    const avg = calcTestClassAverage(section, t, classe.eleves);
+    const cellClass = nocount ? 'nocount' : '';
+    footerCols += `<td class="test-cell ${cellClass}" style="text-align:center">
+      ${avg !== null
+        ? `<span class="test-avg-badge">${avg.toFixed(1)}</span>`
+        : `<span class="moy-badge vide">—</span>`
+      }
+    </td>`;
+  });
+
   return `<div class="card"><div class="notes-table-wrap">
     <table class="notes-table">
       <thead><tr>${headCols}</tr></thead>
       <tbody>${rows}</tbody>
+      <tfoot>
+        <tr class="tfoot-avg">
+          <td class="nom-cell">Moyenne classe</td>
+          ${footerCols}
+          <td class="moy-cell"></td>
+          <td class="action-cell"></td>
+        </tr>
+      </tfoot>
     </table>
   </div></div>`;
 }
@@ -1908,6 +2120,18 @@ function deleteEleve(id) {
 // =========================================================
 // TEST ACTIONS
 // =========================================================
+function toggleMultiPart() {
+  const isMulti = document.getElementById('test-multi-part').checked;
+  document.getElementById('test-total-single-block').style.display = isMulti ? 'none' : 'grid';
+  document.getElementById('test-total-multi-block').style.display = isMulti ? 'block' : 'none';
+  updatePartsSum();
+}
+function updatePartsSum() {
+  const p1 = parseFloat(document.getElementById('test-part1').value) || 0;
+  const p2 = parseFloat(document.getElementById('test-part2').value) || 0;
+  document.getElementById('test-parts-sum').textContent = (p1 + p2);
+}
+
 function openAddTest() {
   editingTestId = null;
   modalSemestreContext = state.currentSemestre;
@@ -1916,6 +2140,12 @@ function openAddTest() {
   document.getElementById('test-nom').value = '';
   document.getElementById('test-total').value = '';
   document.getElementById('test-coef').value = '1';
+  document.getElementById('test-part1').value = '';
+  document.getElementById('test-part2').value = '';
+  document.getElementById('test-coef-multi').value = '1';
+  // Par défaut : les examens sont en 2 parties, les tests non
+  document.getElementById('test-multi-part').checked = isExamen;
+  toggleMultiPart();
   openModal('modal-test');
   setTimeout(() => document.getElementById('test-nom').focus(), 100);
 }
@@ -1930,29 +2160,64 @@ function editTest(id) {
   modalSemestreContext = state.currentSemestre;
   document.getElementById('modal-test-title').textContent = 'Modifier';
   document.getElementById('test-nom').value = t.nom;
-  document.getElementById('test-total').value = t.total;
-  document.getElementById('test-coef').value = getCoef(t);
+  const isMulti = isMultiPart(t);
+  document.getElementById('test-multi-part').checked = isMulti;
+  if (isMulti) {
+    document.getElementById('test-part1').value = t.parts[0];
+    document.getElementById('test-part2').value = t.parts[1];
+    document.getElementById('test-coef-multi').value = getCoef(t);
+    document.getElementById('test-total').value = '';
+    document.getElementById('test-coef').value = '1';
+  } else {
+    document.getElementById('test-total').value = t.total;
+    document.getElementById('test-coef').value = getCoef(t);
+    document.getElementById('test-part1').value = '';
+    document.getElementById('test-part2').value = '';
+    document.getElementById('test-coef-multi').value = '1';
+  }
+  toggleMultiPart();
   openModal('modal-test');
   setTimeout(() => document.getElementById('test-nom').focus(), 100);
 }
 
 function saveTest() {
   const nom = document.getElementById('test-nom').value.trim();
-  const total = parseFloat(document.getElementById('test-total').value);
-  const coefRaw = document.getElementById('test-coef').value.trim().replace(',', '.');
-  let coef = parseFloat(coefRaw);
-  if (!coef || coef <= 0 || isNaN(coef)) coef = 1;
   if (!nom) { toast('Nom requis'); return; }
-  if (!total || total <= 0) { toast('Total invalide'); return; }
+  const isMulti = document.getElementById('test-multi-part').checked;
+  let total, coef, parts = null;
+  if (isMulti) {
+    const p1 = parseFloat(document.getElementById('test-part1').value);
+    const p2 = parseFloat(document.getElementById('test-part2').value);
+    if (!p1 || p1 <= 0 || !p2 || p2 <= 0) { toast('Points par partie invalides'); return; }
+    parts = [p1, p2];
+    total = p1 + p2;
+    const coefRaw = document.getElementById('test-coef-multi').value.trim().replace(',', '.');
+    coef = parseFloat(coefRaw);
+  } else {
+    total = parseFloat(document.getElementById('test-total').value);
+    if (!total || total <= 0) { toast('Total invalide'); return; }
+    const coefRaw = document.getElementById('test-coef').value.trim().replace(',', '.');
+    coef = parseFloat(coefRaw);
+  }
+  if (isNaN(coef) || coef < 0) coef = 1;
+
   const c = getCurrentClasse();
   if (!c) return;
   const section = c[modalSemestreContext];
   if (editingTestId) {
     const t = section.tests.find(x => x.id === editingTestId);
-    if (t) { t.nom = nom; t.total = total; t.coef = coef; }
+    if (t) {
+      t.nom = nom;
+      t.total = total;
+      t.coef = coef;
+      if (parts) t.parts = parts;
+      else delete t.parts;
+    }
     toast('Modifié');
   } else {
-    section.tests.push({ id: uid(), nom, total, coef });
+    const newTest = { id: uid(), nom, total, coef };
+    if (parts) newTest.parts = parts;
+    section.tests.push(newTest);
     toast('Ajouté');
   }
   saveData();
@@ -2225,29 +2490,50 @@ function onPtsChange(e) {
   const input = e.target;
   const eleveId = input.dataset.eleve;
   const testId = input.dataset.test;
+  const partIdx = input.dataset.part; // undefined pour single-part
   const c = getCurrentClasse();
   if (!c) return;
   const section = c[state.currentSemestre];
   const test = section.tests.find(t => t.id === testId);
   if (!test) return;
-  const effectiveTotal = getEffectiveTotal(section, eleveId, testId);
-
-  let val = input.value.trim();
   const key = eleveId + '_' + testId;
+  const isCustom = hasCustomTotal(section, eleveId, testId);
+  const multi = isMultiPartForCell(test, isCustom);
 
-  if (val === '') {
-    delete section.notes[key];
-  } else {
-    val = val.replace(',', '.');
-    let num = parseFloat(val);
-    if (isNaN(num)) {
-      input.value = '';
+  function parsePart(raw, max) {
+    let v = raw.trim().replace(',', '.');
+    if (v === '') return '';
+    let num = parseFloat(v);
+    if (isNaN(num)) return '';
+    if (num < 0) num = 0;
+    if (num > max) num = max;
+    return num;
+  }
+
+  if (multi && partIdx !== undefined) {
+    // Recompose tous les segments à partir des inputs présents dans le DOM
+    const partInputs = document.querySelectorAll(`.pts-input[data-eleve="${eleveId}"][data-test="${testId}"]`);
+    const parts = [];
+    partInputs.forEach(inp => {
+      const idx = Number(inp.dataset.part);
+      const max = idx === 0 ? test.parts[0] : test.parts[1];
+      parts[idx] = parsePart(inp.value, max);
+    });
+    // Nettoyage : si tout est vide, on efface la clé
+    const allEmpty = parts.every(p => p === '' || p === undefined || p === null);
+    if (allEmpty) {
       delete section.notes[key];
     } else {
-      if (num < 0) num = 0;
-      if (num > effectiveTotal) num = effectiveTotal;
-      section.notes[key] = num;
-      input.value = num;
+      section.notes[key] = parts;
+    }
+  } else {
+    // Single-part
+    const effectiveTotal = getEffectiveTotal(section, eleveId, testId);
+    const val = parsePart(input.value, effectiveTotal);
+    if (val === '') {
+      delete section.notes[key];
+    } else {
+      section.notes[key] = val;
     }
   }
   saveData();
@@ -2307,6 +2593,7 @@ if ('serviceWorker' in navigator) {
 // =========================================================
 loadData();
 renderAll();
+document.getElementById('app-version-display').textContent = APP_VERSION;
 </script>
 </body>
 </html>
