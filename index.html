@@ -532,6 +532,21 @@ body {
 }
 .close-indicator svg { width: 11px; height: 11px; stroke-width: 2.5; }
 
+/* Points restants jusqu'à la note supérieure (mode examen) */
+.pts-to-next {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: var(--amber-light);
+  color: #78350F;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 2px;
+  white-space: nowrap;
+  font-family: monospace;
+}
+
 /* TEST COL HEADER */
 .test-col-header {
   display: flex;
@@ -1126,7 +1141,7 @@ body {
 // DATA MODEL
 // =========================================================
 const STORAGE_KEY = 'notes-eleves-v2';
-const APP_VERSION = 'v1.7.0';
+const APP_VERSION = 'v1.7.1';
 
 let state = {
   annees: [],
@@ -1377,6 +1392,23 @@ function isCloseToNextGrade(pts, total) {
   if (current === null || current >= 6.0) return false;
   const withHalfMore = calcNote(Math.min(p + 0.5, total), total);
   return withHalfMore > current;
+}
+
+// Nombre de points (par pas de 0.5) nécessaires pour atteindre la demi-note supérieure
+// Renvoie null si déjà à 6.0 ou si impossible même avec le max.
+function pointsToNextHalfGrade(pts, total) {
+  if (pts === undefined || pts === null || pts === '') return null;
+  const p = Number(pts);
+  if (isNaN(p)) return null;
+  const currentNote = calcNote(p, total);
+  if (currentNote === null || currentNote >= 6.0) return null;
+  const targetNote = currentNote + 0.5;
+  for (let delta = 0.5; p + delta <= total + 1e-9; delta += 0.5) {
+    const testPts = Math.min(p + delta, total);
+    const testNote = calcNote(testPts, total);
+    if (testNote >= targetNote) return delta;
+  }
+  return null;
 }
 
 // Moyenne pondérée par coefficient — sur notes déjà arrondies, puis arrondie à la demi
@@ -1750,6 +1782,7 @@ function buildTable(classe, section) {
   });
   headCols += `<th style="text-align:center">Moy.</th><th></th>`;
 
+  const isExamen = state.currentSemestre === 'examen';
   let rows = '';
   classe.eleves.forEach(e => {
     let testCols = '';
@@ -1768,11 +1801,24 @@ function buildTable(classe, section) {
       const noteBadge = note !== null
         ? `<span class="note-badge ${noteClass(note)}">${note.toFixed(1)}</span>`
         : `<span class="note-badge vide">—</span>`;
-      const closeBadge = (note !== null && !nocount && isCloseToNextGrade(pts, effectiveTotal))
+
+      // Indicateur "à 0.5 pts" — SEULEMENT hors examen
+      const closeBadge = (!isExamen && note !== null && !nocount && isCloseToNextGrade(pts, effectiveTotal))
         ? `<span class="close-indicator" title="À 0.5 point de la note supérieure">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 14 12 8 18 14"/></svg>
           </span>`
         : '';
+
+      // Écart en points jusqu'à la note supérieure — SEULEMENT en examen
+      let ptsNextBadge = '';
+      if (isExamen && note !== null && !nocount) {
+        const delta = pointsToNextHalfGrade(pts, effectiveTotal);
+        if (delta !== null) {
+          const nextNote = (note + 0.5).toFixed(1);
+          ptsNextBadge = `<span class="pts-to-next" title="Il manque ${delta} pts pour atteindre ${nextNote}">→ ${delta}pts</span>`;
+        }
+      }
+
       const customTitle = isCustom
         ? `Total personnalisé (par défaut : ${t.total})`
         : 'Cliquez pour définir un total personnalisé';
@@ -1810,6 +1856,7 @@ function buildTable(classe, section) {
           ${inputsHtml}
           ${noteBadge}
           ${closeBadge}
+          ${ptsNextBadge}
         </div>
       </td>`;
     });
