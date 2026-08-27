@@ -2,7 +2,7 @@
 // Permet l'utilisation hors ligne sur iPad via GitHub Pages.
 // Change la version pour forcer la mise à jour du cache après une modif.
 
-const VERSION = 'v1.8.1';
+const VERSION = 'v1.9.0';
 const CACHE = `notes-eleves-${VERSION}`;
 
 // Tous les chemins sont relatifs pour fonctionner sous /repo-name/ sur GitHub Pages
