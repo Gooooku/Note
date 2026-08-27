@@ -613,19 +613,94 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-.test-avg-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  font-family: monospace;
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--text);
+/* ============= IMPRESSION PDF ============= */
+#print-area { display: none; }
+@media print {
+  body { background: #fff !important; }
+  body > *:not(#print-area) { display: none !important; }
+  #print-area { display: block !important; padding: 0; }
+  @page { size: A4 landscape; margin: 1.2cm 1cm; }
+
+  .print-class { page-break-after: always; }
+  .print-class:last-child { page-break-after: auto; }
+
+  .print-header {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #222;
+  }
+  .print-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 4px;
+  }
+  .print-header .meta {
+    font-size: 10px;
+    color: #555;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .print-section {
+    margin-top: 14px;
+    page-break-inside: avoid;
+  }
+  .print-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    background: #eee;
+    padding: 5px 10px;
+    margin-bottom: 6px;
+  }
+  .print-section-header h2 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #222;
+  }
+  .print-section-header .print-stats {
+    font-size: 10px;
+    color: #444;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+  .print-table thead { display: table-header-group; }
+  .print-table th, .print-table td {
+    border: 1px solid #888;
+    padding: 3px 5px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .print-table th {
+    background: #f0f0f0;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #333;
+    letter-spacing: 0.03em;
+  }
+  .print-table th.name-col,
+  .print-table td.name-col {
+    text-align: left;
+    font-weight: 700;
+    min-width: 130px;
+  }
+  .print-table th small { font-weight: 400; color: #666; text-transform: none; letter-spacing: 0; }
+  .print-table .print-avg-row td {
+    background: #f5f5f5;
+    font-weight: 700;
+    border-top: 2px solid #666;
+  }
+  .print-table .moy-col { background: #fafafa; font-weight: 700; }
+  .print-table .nocount { color: #999; font-style: italic; }
+  .print-table th.nocount-col { background: #e5e5e5; color: #666; }
+  .print-empty { color: #999; font-style: italic; font-size: 11px; padding: 10px; }
 }
 .test-col-actions { display: flex; gap: 3px; margin-top: 3px; }
 .test-mini-btn {
@@ -784,6 +859,31 @@ body {
 .action-item svg { width: 18px; height: 18px; color: var(--text2); }
 .action-item.danger { color: var(--red); }
 .action-item.danger svg { color: var(--red); }
+
+/* PDF export options */
+.pdf-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: var(--surface);
+  transition: all 0.15s;
+}
+.pdf-option:hover { background: var(--bg); }
+.pdf-option input[type=radio] {
+  width: 18px; height: 18px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.pdf-option input[type=radio]:checked + div { color: var(--accent-text); }
+.pdf-option:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
 
 /* DESKTOP */
 @media (min-width: 1024px) {
@@ -1055,6 +1155,55 @@ body {
   </div>
 </div>
 
+<!-- MODAL PDF EXPORT -->
+<div class="modal-overlay" id="modal-pdf-export">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Exporter en PDF</h3>
+      <button class="btn-icon" onclick="closeModal('modal-pdf-export')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Classes à exporter</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label class="pdf-option">
+            <input type="radio" name="pdf-scope" value="current" checked>
+            <div style="min-width:0">
+              <div style="font-weight:600">Classe actuelle</div>
+              <div style="font-size:12px;color:var(--text3)" id="pdf-current-name">—</div>
+            </div>
+          </label>
+          <label class="pdf-option">
+            <input type="radio" name="pdf-scope" value="all">
+            <div style="min-width:0">
+              <div style="font-weight:600">Toutes les classes</div>
+              <div style="font-size:12px;color:var(--text3)">de l'année <span id="pdf-annee-name">—</span></div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contenu</label>
+        <select class="form-input" id="pdf-semestre">
+          <option value="all">Tout (Sem 1 + Sem 2 + Examen si présent)</option>
+          <option value="semestre1">Semestre 1 uniquement</option>
+          <option value="semestre2">Semestre 2 uniquement</option>
+          <option value="examen">Examen uniquement</option>
+        </select>
+      </div>
+      <div style="font-size:12px;color:var(--text3);font-style:italic;line-height:1.5">
+        L'aperçu d'impression s'ouvrira — choisis <strong>« Enregistrer au format PDF »</strong> comme destination.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-pdf-export')">Annuler</button>
+      <button class="btn btn-primary" onclick="generatePDF()">Générer PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL MENU -->
 <div class="modal-overlay" id="modal-menu">
   <div class="modal">
@@ -1066,6 +1215,10 @@ body {
     </div>
     <div class="modal-body">
       <div class="action-list">
+        <button class="action-item" onclick="openPDFExport()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Exporter en PDF
+        </button>
         <button class="action-item" onclick="exportJSON()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Exporter une sauvegarde
@@ -1142,7 +1295,7 @@ body {
 // DATA MODEL
 // =========================================================
 const STORAGE_KEY = 'notes-eleves-v2';
-const APP_VERSION = 'v1.8.1';
+const APP_VERSION = 'v1.9.0';
 
 let state = {
   annees: [],
@@ -2555,6 +2708,304 @@ function confirmImportCSV() {
   closeModal('modal-import-csv');
   renderContent();
   toast(`✓ ${count} élève${count > 1 ? 's' : ''} importé${count > 1 ? 's' : ''}`);
+}
+
+// =========================================================
+// PDF EXPORT (via impression navigateur)
+// =========================================================
+function openPDFExport() {
+  const annee = getCurrentAnnee();
+  const classe = getCurrentClasse();
+  if (!annee || annee.classes.length === 0) {
+    toast('Aucune classe à exporter');
+    return;
+  }
+  document.getElementById('pdf-annee-name').textContent = annee.nom;
+  const currentOption = document.querySelector('input[name="pdf-scope"][value="current"]');
+  const currentLabel = currentOption.closest('.pdf-option');
+  if (classe) {
+    document.getElementById('pdf-current-name').textContent = classe.nom;
+    currentOption.disabled = false;
+    currentLabel.style.opacity = '1';
+    currentLabel.style.pointerEvents = 'auto';
+    currentOption.checked = true;
+  } else {
+    document.getElementById('pdf-current-name').textContent = 'Aucune classe sélectionnée';
+    currentOption.disabled = true;
+    currentLabel.style.opacity = '0.5';
+    currentLabel.style.pointerEvents = 'none';
+    document.querySelector('input[name="pdf-scope"][value="all"]').checked = true;
+  }
+  closeModal('modal-menu');
+  openModal('modal-pdf-export');
+}
+
+function generatePDF() {
+  const scope = document.querySelector('input[name="pdf-scope"]:checked').value;
+  const semestreChoice = document.getElementById('pdf-semestre').value;
+  const annee = getCurrentAnnee();
+  if (!annee) { toast('Aucune année sélectionnée'); return; }
+
+  const classes = (scope === 'current' && getCurrentClasse())
+    ? [getCurrentClasse()]
+    : annee.classes;
+  if (classes.length === 0) { toast('Aucune classe à exporter'); return; }
+
+  let semestres;
+  if (semestreChoice === 'all') {
+    semestres = ['semestre1', 'semestre2'];
+    if (classes.some(c => c.hasExamen)) semestres.push('examen');
+  } else {
+    semestres = [semestreChoice];
+  }
+
+  // Blocs à générer : (classe, semestre) valides
+  const blocks = [];
+  classes.forEach(c => {
+    semestres.forEach(s => {
+      if (s === 'examen' && !c.hasExamen) return;
+      if (!c[s]) return;
+      blocks.push({ classe: c, semestreKey: s, section: c[s] });
+    });
+  });
+  if (blocks.length === 0) { toast('Rien à exporter'); return; }
+
+  const html = buildPDFHTML(annee, blocks);
+
+  // Utilise un iframe caché pour lancer l'impression
+  let iframe = document.getElementById('pdf-print-iframe');
+  if (iframe) iframe.remove();
+  iframe = document.createElement('iframe');
+  iframe.id = 'pdf-print-iframe';
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  closeModal('modal-pdf-export');
+
+  // Laisse le temps au navigateur de rendre puis lance l'impression
+  setTimeout(() => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch(e) {
+      console.error(e);
+      toast('⚠ Impression impossible : ' + (e.message || ''));
+    }
+  }, 400);
+}
+
+function buildPDFHTML(annee, blocks) {
+  const semestreLabels = {
+    semestre1: 'Semestre 1',
+    semestre2: 'Semestre 2',
+    examen: 'Examen'
+  };
+  const dateStr = new Date().toLocaleDateString('fr-CH', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  let blocksHtml = '';
+  blocks.forEach((b, i) => {
+    const first = i === 0;
+    blocksHtml += `
+      <section class="class-block ${!first ? 'page-break' : ''}">
+        <h1>${escPdf(b.classe.nom)}</h1>
+        <div class="meta">${escPdf(annee.nom)} · ${semestreLabels[b.semestreKey]}</div>
+        ${buildPDFTable(b.classe, b.section, b.semestreKey)}
+      </section>`;
+  });
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Notes — ${escPdf(annee.nom)}</title>
+<style>
+@page { size: A4 landscape; margin: 10mm 10mm 12mm 10mm; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: #111;
+  font-size: 10px;
+  padding: 14px 18px;
+}
+.class-block { margin-bottom: 24px; }
+.page-break { page-break-before: always; }
+h1 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 3px 0;
+  color: #1B4332;
+}
+.meta {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 9.5px;
+  table-layout: auto;
+}
+th, td {
+  border: 1px solid #c8c8c8;
+  padding: 5px 6px;
+  vertical-align: middle;
+}
+thead th {
+  background: #efece6;
+  font-weight: 600;
+  font-size: 9px;
+  text-align: center;
+  vertical-align: bottom;
+}
+th.name-header { text-align: left; }
+th .test-name { font-weight: 700; font-size: 10px; color: #1B4332; }
+th .test-info { font-size: 8px; font-weight: 400; color: #666; margin-top: 2px; line-height: 1.3; }
+td.nom-cell {
+  font-weight: 600;
+  font-size: 10px;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+td.note-cell {
+  text-align: center;
+  padding: 4px;
+}
+td.note-cell .note-val {
+  font-weight: 700;
+  font-size: 12px;
+  font-family: monospace;
+}
+td.note-cell .pts-val {
+  font-size: 8px;
+  color: #666;
+  margin-top: 1px;
+  font-family: monospace;
+}
+td.moy-cell {
+  text-align: center;
+  font-weight: 700;
+  background: #f4f2ee;
+  font-size: 12px;
+  font-family: monospace;
+}
+tfoot td {
+  background: #efece6;
+  font-weight: 700;
+  border-top: 2px solid #999;
+}
+tfoot td.nom-cell {
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: #444;
+}
+tfoot td.note-cell, tfoot td.moy-cell {
+  font-size: 11px;
+  color: #1B4332;
+}
+th.nocount, td.nocount { background: #f0f0f0 !important; color: #999; }
+td.nocount .note-val { color: #999; }
+.empty {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+}
+.footer {
+  margin-top: 24px;
+  font-size: 8px;
+  color: #999;
+  text-align: center;
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+}
+</style>
+</head>
+<body>
+${blocksHtml}
+<div class="footer">Généré le ${dateStr} · Notes Élèves ${APP_VERSION}</div>
+</body>
+</html>`;
+}
+
+function buildPDFTable(classe, section, semestreKey) {
+  if (classe.eleves.length === 0) {
+    return '<div class="empty">Aucun élève dans cette classe</div>';
+  }
+  if (section.tests.length === 0) {
+    return '<div class="empty">Aucun ' + (semestreKey === 'examen' ? 'examen' : 'test') + ' pour cette section</div>';
+  }
+
+  // En-tête
+  let headHtml = '<th class="name-header">Élève</th>';
+  section.tests.forEach(t => {
+    const coef = getCoef(t);
+    const nocountAttr = coef === 0 ? ' class="nocount"' : '';
+    const coefText = coef !== 1 ? ` · Coef. ${coef}` : '';
+    const totalText = isMultiPart(t) ? `${t.parts[0]}+${t.parts[1]}=${t.total}` : `${t.total}`;
+    headHtml += `<th${nocountAttr}>
+      <div class="test-name">${escPdf(t.nom)}</div>
+      <div class="test-info">/${totalText} pts${coefText}</div>
+    </th>`;
+  });
+  headHtml += '<th>Moyenne</th>';
+
+  // Corps
+  let bodyHtml = '';
+  classe.eleves.forEach(e => {
+    let row = `<td class="nom-cell">${escPdf(e.prenom)} ${escPdf(e.nom)}</td>`;
+    section.tests.forEach(t => {
+      const coef = getCoef(t);
+      const nocountClass = coef === 0 ? ' nocount' : '';
+      const isCustom = hasCustomTotal(section, e.id, t.id);
+      const effectiveTotal = getEffectiveTotal(section, e.id, t.id);
+      const pts = getEffectivePts(section, t, e.id, isCustom);
+      const note = pts !== null ? calcNote(pts, effectiveTotal) : null;
+      const noteStr = note !== null ? note.toFixed(1) : '—';
+      const ptsStr = pts !== null ? `${pts}/${effectiveTotal}${isCustom ? '*' : ''}` : '';
+      row += `<td class="note-cell${nocountClass}">
+        <div class="note-val">${noteStr}</div>
+        ${ptsStr ? `<div class="pts-val">${ptsStr}</div>` : ''}
+      </td>`;
+    });
+    const moy = calcMoyenne(section, e.id);
+    row += `<td class="moy-cell">${moy !== null ? moy.toFixed(1) : '—'}</td>`;
+    bodyHtml += `<tr>${row}</tr>`;
+  });
+
+  // Pied : moyenne classe par épreuve
+  let footHtml = '<td class="nom-cell">Moyenne classe</td>';
+  section.tests.forEach(t => {
+    const coef = getCoef(t);
+    const nocountClass = coef === 0 ? ' nocount' : '';
+    const avg = calcTestClassAverage(section, t, classe.eleves);
+    footHtml += `<td class="note-cell${nocountClass}"><div class="note-val">${avg !== null ? avg.toFixed(1) : '—'}</div></td>`;
+  });
+  const allMoys = classe.eleves.map(e => calcMoyenne(section, e.id)).filter(m => m !== null);
+  const moyClasse = allMoys.length ? Math.round((allMoys.reduce((a,b) => a+b, 0) / allMoys.length) * 10) / 10 : null;
+  footHtml += `<td class="moy-cell">${moyClasse !== null ? moyClasse.toFixed(1) : '—'}</td>`;
+
+  return `<table>
+    <thead><tr>${headHtml}</tr></thead>
+    <tbody>${bodyHtml}</tbody>
+    <tfoot><tr>${footHtml}</tr></tfoot>
+  </table>`;
+}
+
+function escPdf(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // =========================================================
